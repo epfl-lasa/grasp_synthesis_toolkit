@@ -1,0 +1,7 @@
+*.m~
+*.un~
+*.asv
+symbolic_functions/
+results/
+database/
+*.fig
