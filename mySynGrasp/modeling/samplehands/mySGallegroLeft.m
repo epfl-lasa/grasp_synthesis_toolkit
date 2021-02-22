@@ -23,7 +23,7 @@ function hand = mySGallegroLeft(T)
 %    1 - A L L E G R O  H A N D  D H  P A R A M E T E R S
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 if nargin < 1
-    T = eye(4);
+    T = eye(4); % Denativt Hartenberg
 end
 
 hand_type = 'AllegroHandLeft';

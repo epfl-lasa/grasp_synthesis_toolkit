@@ -12,7 +12,7 @@ problem_configuration;
 %% Configuration of experiment
 recon.hand_model = true; % reconstruct hand models
 recon.object_model = true; % reconstruct object models
-recon.rmap = true; % reconstruct reachability mapS
+recon.rmap = true; % reconstruct reachability maps
 recon.os = true; % reconstruct opposition space
 
 %% Create Hand Models
