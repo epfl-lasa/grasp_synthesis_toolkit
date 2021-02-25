@@ -38,18 +38,18 @@ function [obj, obj_grad, ht_obj, ht_obj_grad] = symObjectiveFunction(hand, param
     end
 
     %%% Cost 1: Force closure cost
-    ob = [sym('x'),sym('y'),sym('z')]; % (1,3)
-    cpt = Cp(1,:); % (1,3) contact position
-    ft = ob - cpt; % (1,3) surface normal at contact point. t: thumb, f direction, pointing towards object center
-    cpi = Cp(2,:);
-    fi = ob - cpi; % i: index finger
+    obj_cntr = [sym('x'),sym('y'),sym('z')]; % (1,3)
+    cpt = Cp(1,:); % (1,3) contact point thumb
+    ft = obj_cntr - cpt; % (1,3) surface normal at contact point. t: thumb, f direction, pointing towards object center
+    cpi = Cp(2,:); % (1,3) contact point index
+    fi = obj_cntr - cpi; % i: index finger
     
     Cfc = atan2(norm(cross(ft,(cpi-cpt))), dot(ft,(cpi-cpt)))+...
         atan2(norm(cross(fi,(cpt-cpi))), dot(fi,(cpt-cpi))); % 'Cost force closure'
     
     %%% Cost 2: Torque cost
     fg = sym([0,0,-1]); % (1,3) (direction of) force of gravity
-    Ct = norm(cross((ob-cpi),-fg) + cross((ob-cpt),-fg));
+    Ct = norm(cross((obj_cntr-cpi),-fg) + cross((obj_cntr-cpt),-fg));
 
     %%% minimize joint angle movement
     Q = X_key(param.idx_q);
