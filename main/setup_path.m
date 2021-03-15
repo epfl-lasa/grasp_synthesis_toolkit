@@ -8,4 +8,4 @@ addpath(genpath('../database'));
 addpath(genpath('../mySynGrasp'));
 addpath(genpath('../Toolbox'));
 addpath(genpath('../src'));
-addpath(genpath('pwd'));
+addpath(genpath(pwd));

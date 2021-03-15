@@ -6,7 +6,7 @@ setup_path;
 setup_problem_config;
 
 %% Configuration of experiment
-recon.hand_model = true; % reconstruct hand models
+recon.hand_model = false; % reconstruct hand models
 recon.object_model = true; % reconstruct object models
 recon.rmap = true; % reconstruct reachability maps
 recon.os = true; % reconstruct opposition space
@@ -29,4 +29,13 @@ else
     fprintf('\n[1] Hand model loaded.\n');
 end
 %% Create Object Models
+
+roll = pi/4;
+pitch = pi/6;
+yaw = 0;
+q = quaternion([yaw,pitch,roll],'euler', 'ZYX','frame');
+% [TODO] add translation?
+cyl = objCylinder(10,20,20,q);
+
+plotCylinder(cyl);
 

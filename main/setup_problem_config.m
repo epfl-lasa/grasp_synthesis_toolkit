@@ -14,7 +14,7 @@ sep = strfind(pwd,filesep);
 parent_dir = current_dir(1:sep(end)-1);
 
 src_dir = [parent_dir, '/src'];
-database_dir = [parent_dir, '/src'];
+database_dir = [parent_dir, '/database'];
 
 %% Set default values for parameters
 k = 3; % number of edges for approximating the friction cone
