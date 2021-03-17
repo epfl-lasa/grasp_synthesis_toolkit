@@ -54,5 +54,8 @@ struct.Z = Z;
 struct.center = [0;0;0]; % center always at the origin
 struct.n = rotatepoint(quat,[0,0,1]); % axis of the cylinder
 struct.res = res;
+struct.type = 'cyl';
+struct.radius = rad;
+struct.height = h;
 
 cyl = struct;

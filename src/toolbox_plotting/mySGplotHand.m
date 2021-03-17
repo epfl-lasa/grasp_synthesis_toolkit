@@ -19,7 +19,7 @@ function myCustomizedSGplotHand(hand, factv, transp, plot_contacts)
     if nargin < 1 % Test mode, newly added: set default hand
         hand = SGparadigmatic;
         % hand = SGmodularHand;
-    elseif(~SGisHand(hand))
+    elseif(~mySGisHand(hand))
         error 'hand argument is not a valid hand-structure' 
     end
 
@@ -44,12 +44,12 @@ function myCustomizedSGplotHand(hand, factv, transp, plot_contacts)
             p2 = [referenceJoint(1,4),referenceJoint(2,4),referenceJoint(3,4)]';
             if hand.type=="AllegroHandLeft" || hand.type=="AllegroHandRight" 
                 if i<hand.F{j}.n+1
-                    SGplotLink_allegro(p1,p2,[28/2 28/2],transp,[0.30 0.30 0.30]);
+                    mySGplotLink_allegro(p1,p2,[28/2 28/2],transp,[0.30 0.30 0.30]);
                 else           
-                    SGplotLink_allegro(p1,p2,[28/2 28/2],transp,[0.9 0.9 0.9]);
+                    mySGplotLink_allegro(p1,p2,[28/2 28/2],transp,[0.9 0.9 0.9]);
                 end
             else
-                SGplotLink(p1,p2,5,transp);
+                mySGplotLink(p1,p2,5,transp);
             end
             % plot the joint location
             if i < hand.F{j}.n+1
@@ -85,9 +85,9 @@ function myCustomizedSGplotHand(hand, factv, transp, plot_contacts)
     end
     % [3/3] plot palm
     if hand.type=="AllegroHandLeft" || hand.type=="AllegroHandRight" 
-        SGplotPalm_allegro(hand);
+        mySGplotPalm_allegro(hand);
     else
-        SGplotPalm(hand);
+        mySGplotPalm(hand);
     end
 
     axis 'equal';

@@ -10,6 +10,12 @@ switch object.type
         radius = param.object_radius; % object radius
         
         object = mySGsphere(To,radius,object.clr);
+    case 'cyl' % cylinder
+        oc = X_sol(param.idx_oc); % object center
+        To = trvec2tform(oc(:).');
+        radius = param.object_radius; % object radius
+        
+        object = mySGsphere(To,radius,object.clr);
     otherwise
     	error('NotImplementedError.');
 end
