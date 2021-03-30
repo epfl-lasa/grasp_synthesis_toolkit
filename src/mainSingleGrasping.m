@@ -1,4 +1,4 @@
-function [hand, object, opt_soln, opt_cost, if_solution] = mainSingleGrasping(hand, object, recon, os_pair, if_plot, if_save, file_title)
+function [hand, object, opt_soln, opt_cost, if_solution] = grasp_cylinder(hand, object, recon, os_pair, if_plot, if_save, file_title)
 
     if nargin < 5
         if_save = false;
@@ -57,7 +57,7 @@ function [hand, object, opt_soln, opt_cost, if_solution] = mainSingleGrasping(ha
 
         fprintf('  Opp. Space: F%dL%d and F%dL%d\n', os.os_info{1}(1),os.os_info{1}(2),os.os_info{2}(1),os.os_info{2}(2));
 
-        [X_sol, Cost, param, if_trial_success] = optGraspJS(hand, object, os); % This is the main function for optimal grasping synthesis
+        [X_sol, Cost, param, if_trial_success] = optGraspCyl(hand, object, os); % This is the main function for optimal grasping synthesis
 
         if if_trial_success
             costList(end+1) = Cost;

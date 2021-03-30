@@ -10,10 +10,10 @@ init;
 problem_configuration;
 
 %% Configuration of experiment
-recon.hand_model = true; % reconstruct hand models
-recon.object_model = true; % reconstruct object models
-recon.rmap = true; % reconstruct reachability maps
-recon.os = true; % reconstruct opposition space
+recon.hand_model = false; % reconstruct hand models
+recon.object_model = false; % reconstruct object models
+recon.rmap = false; % reconstruct reachability maps
+recon.os = false; % reconstruct opposition space
 
 %% Create Hand Models
 if recon.hand_model || ~exist('hand','var')
