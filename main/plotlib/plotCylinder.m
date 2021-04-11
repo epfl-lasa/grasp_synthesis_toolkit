@@ -1,8 +1,9 @@
 function plotCylinder(cyl)
 % plot the cylinder object
 
-figure
-title('Cylinder object')
+hold on
+grid on
+axis('equal')
 surf(cyl.X,cyl.Y,cyl.Z)
 
 axis('equal')

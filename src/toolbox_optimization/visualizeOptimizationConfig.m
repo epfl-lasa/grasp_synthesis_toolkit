@@ -44,7 +44,7 @@ function visualizeOptimizationConfig(hand, object_list, X_sol, param, fig_title,
             case 'struct' % a single object is given
                 soln = struct('X_sol',X_sol,'param',param);
                 object = updateObjectConfig(object_list, soln);
-                mySGplotObject(object);
+                plotObject(object);
                 hold on;
                 scatter3(oc(1),oc(2),oc(3),100,'b','filled');
                 plot_contact_info = true;

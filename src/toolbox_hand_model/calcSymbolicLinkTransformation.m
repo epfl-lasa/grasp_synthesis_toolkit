@@ -2,6 +2,7 @@ function finger = calcSymbolicLinkTransformation(finger)
     %%% Obtain symbolic expression from base to each contact points on the link
     % Adapted from 'moveFinger.m'
 
+   
     if isfield(finger, 'symbolic')
         if ~isempty(finger.symbolic)
             return;
@@ -54,7 +55,7 @@ function finger = calcSymbolicLinkTransformation(finger)
 
         %%% Calculating the symbolic transformation from base of the link to the contact point of the link based on the cylindrical coordinate, see 'calcContactPoint.m'
         rotm = sym([1,0,0;...
-            0,cos(phi),-sin(phi);... % phi is in degree
+            0,cos(phi),-sin(phi);... % phi is in radian
             0,sin(phi), cos(phi)]);
         tn = [0;rho;0]; % translate to the surface of link
         tr = [L*alp;0;0]; % move along z axis. separate the symbolic of L, the link length, and alp: alpha
@@ -100,7 +101,7 @@ function finger = calcSymbolicLinkTransformation(finger)
         finger.Link{l}.contact.symbolic.r = HTcp(1:3,1); % radical (x of local CF) direction on the contact
         finger.Link{l}.contact.symbolic.n = HTcp(1:3,2); % normal (y of local CF) direction
         finger.Link{l}.contact.symbolic.p = HTcp(1:3,4); % contact position, expressed in WCF, this is used to construct 'hand.symbolic.Cp'
-
+        
         finger.Link{l}.contact.symbolic.lc = HTlc(1:3,4); % Cartesian coordinates of link center
 
         %%% [link dist] dist from link to an external point

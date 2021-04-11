@@ -6,10 +6,10 @@ setup_path;
 setup_problem_config;
 
 %% Configuration of experiment
-recon.hand_model = true; % reconstruct hand models
+recon.hand_model = false; % reconstruct hand models
 recon.object_model = false; % reconstruct object models
-recon.rmap = true; % reconstruct reachability maps
-recon.os = true; % reconstruct opposition space
+recon.rmap = false; % reconstruct reachability maps
+recon.os = false; % reconstruct opposition space
 
 %% Create Hand Models
 if recon.hand_model || ~exist('hand','var')
@@ -29,13 +29,14 @@ else
     fprintf('\n[1] Hand model loaded.\n');
 end
 %% Create Object Models
-
+radius = 20;
+height = 40;
 roll = pi/4;
 pitch = pi/6;
 yaw = 0;
 q = quaternion([yaw,pitch,roll],'euler', 'ZYX','frame');
-% [TODO] add translation?
-cyl = objCylinder(10,20,20,q);
+t = [0;1;0]; % translation
+cyl = objCylinder(radius, height,q, t);
 
 plotCylinder(cyl);
 
@@ -59,12 +60,12 @@ plotCylinder(cyl);
 % comprises the ad-/abduction degrees of freedom on the bottom of the finger.
 % The last link is used to model another virtual link at finger tip for convenience.
 
-osList = {{[1,4],[2,4]},...
-    {[2,4],[3,4]},...
-    {[2,3],[3,3]},...
-    {[2,2],[4,2]},...
-    {[3,4],[0,0]},...
-    {[2,2],[2,4]}};
+osList = {{[1,4],[2,4]}};%,...
+%     {[2,4],[3,4]},...
+%     {[2,3],[3,3]},...
+%     {[2,2],[4,2]},...
+%     {[3,4],[0,0]},...
+%     {[2,2],[2,4]}};
 
 for i = 1:numel(osList)
     fprintf('Experiment: %d\n', i);
@@ -79,7 +80,7 @@ for i = 1:numel(osList)
     disp(file_title);
 
     % Solve grasping synthesis optimization problem
-    [hand, object, opt_soln, opt_cost, if_solution] = mainSingleGrasping(hand, object, recon, os_pair, false, false, file_title);
+    [hand, object, opt_soln, opt_cost, if_solution] = graspSingleCylinder(hand, object, recon, os_pair, false, false, file_title);
 
     % Visualize and save results
     if if_solution

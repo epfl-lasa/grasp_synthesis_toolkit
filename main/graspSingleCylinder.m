@@ -1,4 +1,4 @@
-function [hand, object, opt_soln, opt_cost, if_solution] = mainSingleGrasping(hand, object, recon, os_pair, if_plot, if_save, file_title)
+function [hand, object, opt_soln, opt_cost, if_solution] = graspSingleCylinder(hand, object, recon, os_pair, if_plot, if_save, file_title)
 
     if nargin < 5
         if_save = false;
