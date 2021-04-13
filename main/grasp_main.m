@@ -31,12 +31,12 @@ end
 %% Create Object Models
 radius = 20;
 height = 40;
-roll = pi/4;
+roll = pi/8;
 pitch = pi/6;
 yaw = 0;
 q = quaternion([yaw,pitch,roll],'euler', 'ZYX','frame');
-t = [0;1;0]; % translation
-cyl = objCylinder(radius, height,q, t);
+t = [0;0;0]; % translation
+cyl = cylinderObj(radius, height,q, t);
 
 plotCylinder(cyl);
 

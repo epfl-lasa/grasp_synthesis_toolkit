@@ -33,7 +33,7 @@ pactv = 0; % active flag of palm
 
 tag = '';
 ncpf = ncp; % number of contacts on fingers (exclude contact on palms)
-
+idx_finger = zeros(ncp,1);
 for i = 1:ncp
     if ~all(os_info{i}) % palm is in the os list
         pactv = 1; % set palm as flag
@@ -41,7 +41,7 @@ for i = 1:ncp
         tag(end+1) = 'P';
     else
         [idx_f,idx_l] = deal(os_info{i}(1),os_info{i}(2));
-    
+        idx_finger(i) = idx_f
         nq_pre = min([idx_l, hand.F{idx_f}.n]); % number of joints ahead of idx_lnk, in case idx_lnk > finger.n (possible for fingertip link)
         q_idx = find(hand.qin == idx_f, 1); % first non-zero position (starting point index) of the indices of all joints of the finger in the hand
         
@@ -54,6 +54,16 @@ for i = 1:ncp
     tag(end+1) = '_';
 end
 
+% activate intermediate fingers
+for i=min(idx_finger)+1:max(idx_finger)-1
+    % i is necessarily a finger (cannot be zero)
+    
+    % retrieve index of the first link of intermediate finger
+    q_idx = find(hand.qin == i, 1); 
+    h_qactv_states = hand.qactv(q_idx:q_idx+hand.F{i}.n-1);
+    h_qactv_states = logical(h_qactv_states(:).');
+    qactv_loop(q_idx:q_idx+hand.F{i}.n-1) = true(size(h_qactv_states)) & h_qactv_states;
+end
 %% Initial States of Optimization Variables
 xrange = zeros(2,ncp); % (lower, upper), boundaries of workspace rmaps, limits of alpha shape (approximated using rectangular)
 yrange = zeros(2,ncp);
@@ -150,8 +160,8 @@ end
 
 % Keys of parameters
 % [Q: Do I need to take symbolic variables of the object here?]
-key_oc = object.ctr_sym; %[sym('x');sym('y');sym('z')];
-key_quat = object.quat_sym; %sym('q',[4,1]);
+key_oc = object.sym.ctr; %[sym('x');sym('y');sym('z')];
+key_quat = object.sym.quat; %sym('q',[4,1]);
 key_mu = sym('mu%d',[ncp,1]);
 key_q = dict_q(qactv_loop);
 key_phi = sym(zeros(ncpf,1));
@@ -241,16 +251,18 @@ end
 
 %%% Input parameters for optimization problems
 param.os = os; % saves list of (finger,link) information for opposition space
-param.obj_radius = object.radius; % radius of sphere object
-param.obj_height = object.height; % cylinder height (required in updateObjConf)
-param.obj_ctr = object.ctr_sym;
-param.obj_normal = object.n;
-param.obj_axpt = object.axpt;
-param.obj_cp_proj = object.cp_proj;
-%param.obj_cp = object.cp; [TODO] remove this line
+param.obj = object; % radius of sphere object
+% param.obj_height = object.height; % cylinder height (required in updateObjConf)
+% symbolic object expressions (for Cylinder)
+% param.obj_ctr = object.sym.ctr;
+% param.obj_normal = object.sym.n;
+% param.obj_axisPtArray = object.sym.axisPtArray;
+% param.obj_cpProj = object.sym.cpProj;
+% param.type = object.type;
+
+% hand parameters
 param.hand_radius = hand.hand_radius; % i.e. 'link.radius'
 param.grasped_objects = grasped_objects; % list of grasped objects
-param.type = object.type;
 
 param.ncp = ncp; % number of contacts
 param.k = k; % number of edges of friction cone

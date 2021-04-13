@@ -14,10 +14,12 @@ switch object.type
         oc = X_sol(param.idx_oc);       % object center
         quat = X_sol(param.idx_quat);   % quaternion (already normalized)
         q = quaternion(quat(1),quat(2),quat(3),quat(4));
-        radius = param.obj_radius; % object radius
-        height = param.obj_height;
-        
-        object = objCylinder(radius,height,q,oc);
+        radius = param.obj.radius; % object radius
+        height = param.obj.height;
+        % add the projection here
+        mu = X_sol(param.idx_mu);
+        res = 20;
+        object = cylinderObj(radius,height,q,oc,res,mu);
     otherwise
     	error('NotImplementedError.');
 end

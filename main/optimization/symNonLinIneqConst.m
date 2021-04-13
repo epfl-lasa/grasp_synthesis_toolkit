@@ -4,16 +4,14 @@ function [c, c_grad, param, ht_c, ht_c_grad] = symNonLinIneqConst(hand, param)
     
     % parameters
     ncp = param.ncp;                % number of contact points (palm incl.)
-    obj_r = param.obj_radius;       % object radius
-    %obj_h = param.obj_height;       % cylinder length
+    obj_r = param.obj.radius;       % object radius
     link_r = param.hand_radius;     % finger radius of the hand
    
     % symbolic variables
     X_key = param.X_key;
-    obj_axpt = param.obj_axpt;
-    obj_cnt = [sym('x');sym('y');sym('z')]; % object center
-    obj_quat = sym('q',[4,1]); % object quaternion
-    obj_n = param.obj_normal;
+    obj_axpt = param.obj.sym.axisPtArray;   % equidistant points along axis
+    obj_cnt = param.obj.sym.ctr;            % object center
+
     dict_q = param.dict_q; % dictionary of ALL symbolic joint angles: q11,q12,...
     
     fprintf('\nConstructing Nonl. Inequality Constraints: \n');
@@ -40,15 +38,14 @@ function [c, c_grad, param, ht_c, ht_c_grad] = symNonLinIneqConst(hand, param)
             nq_pre = min([idx_l, finger.n]); % number of joints ahead of idx_lnk, in case idx_lnk > finger.n (possible for fingertip link)
             for j = 1:nq_pre % Iterate over all links, including link in contact ('idx_l')
                 link = finger.Link{j};
-                if ~link.is_real
-                    continue;
-                end
-
+%                 if ~link.is_real
+%                     continue;
+%                 end
                 % [Cylinder implementation]
                 n_axpt = size(obj_axpt,2); % obj_axpt is (3 x n_points)
                 for k=1:n_axpt
                     link_pos = link.symbolic.HT_next(1:3,4);
-                    c_ij = -(norm(link_pos-obj_axpt(:,k),2)-link_r-obj_r);
+                    c_ij = link_r + obj_r - norm(link_pos-obj_axpt(:,k),2);
                     c(end+1) = c_ij; % c<=0;
                 end
             end
@@ -79,12 +76,9 @@ function [c, c_grad, param, ht_c, ht_c_grad] = symNonLinIneqConst(hand, param)
                 n_axpt = size(obj_axpt,2);
                 for k=1:n_axpt
                     % intermediate fingers should also be active!
-                    % [TODO] remove subs function
                     link_pos = link.symbolic.HT_next(1:3,4);
-                    c_ij = -(norm(link_pos - obj_axpt(:,k),2)-link_r - obj_r);
-                    c_ij = subs(c_ij, finger.q_sym, finger.q.');
+                    c_ij = link_r + obj_r - norm(link_pos - obj_axpt(:,k),2) ;
                     c(end+1) = c_ij;
-                    %end
                 end
             end
         end
@@ -101,17 +95,23 @@ function [c, c_grad, param, ht_c, ht_c_grad] = symNonLinIneqConst(hand, param)
     fprintf('* [3/5] Collision avoidance (object vs. palm): ');
     
     % [TODO] implement that part!! (use axis points)
-    x1 = hand.F{1}.symbolic.base(1:3,4);
-    x2 = hand.F{end}.symbolic.base(1:3,4);
+    %x1 = hand.F{1}.symbolic.base(1:3,4);
+    %x2 = hand.F{end}.symbolic.base(1:3,4);
     % Line x1-x2 is the 'finger base line' that connects all finger bases
     % This detection is realized by calculating the distance between object
     % center and the finger base line
-    dist = norm(cross(obj_cnt-x1,obj_cnt-x2))/norm(x2-x1);
-    c(end+1) = link_r + obj_r - dist;
-    
-    c_idx(end+1) = numel(c)-sum(c_idx);
-    c_name{end+1} = 'Collision avoidance (object vs. palm)';
-    fprintf('%d\n', c_idx(end));
+    %dist = norm(cross(obj_cnt-x1,obj_cnt-x2))/norm(x2-x1);
+    palmPt = hand.P.points_inr(1,:).'; % point on the inner surface of the palm
+    n_axpt = size(obj_axpt,2);
+    palmNormal = hand.P.contact.symbolic.n;
+%     for k=1:n_axpt
+%         dist = palmNormal.' * (obj_axpt(:,k)-palmPt); % project the object on the normal
+%         c(end+1) = link_r + obj_r - dist;
+%     end
+%     
+%     c_idx(end+1) = numel(c)-sum(c_idx);
+%     c_name{end+1} = 'Collision avoidance (object vs. palm)';
+%     fprintf('%d\n', c_idx(end));
 
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     % Inequality Constraint 4: Collision Avoidance

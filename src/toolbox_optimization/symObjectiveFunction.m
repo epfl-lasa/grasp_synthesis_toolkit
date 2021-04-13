@@ -20,7 +20,7 @@ function [obj, obj_grad, ht_obj, ht_obj_grad] = symObjectiveFunction(hand, param
             Cp(i,:) = hand.P.contact.symbolic.p; % contact point on palm
             Cn(i,:) = hand.P.contact.symbolic.n;
             
-            Kd = Kd + 1; % palm active
+            % Kd = Kd + 1; % palm active % what is Kd about?
         else
             [idx_f,idx_l] = deal(os_info{i}(1),os_info{i}(2));
             finger = hand.F{idx_f};

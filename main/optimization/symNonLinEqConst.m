@@ -2,19 +2,18 @@
 function [ceq, ceq_grad, param, ht_ceq, ht_ceq_grad] = symNonLinEqConst(hand, param)
     os_info = param.os.os_info;
     ncp = param.ncp;            % number of contact points
-    obj_r = param.obj_radius;   % object radius
-    type = param.type;
+    obj_r = param.obj.radius;   % object radius
+    type = param.obj.type;
     
     % symbolic expressions from the object
-    obj_cp_proj = param.obj_cp_proj;% projection on cylinder axis f(x,y,z,quat,mu)
-    obj_ctr = param.obj_ctr;        % object center
-    obj_n = param.obj_normal;       % object normal
+    obj_cpProj = param.obj.sym.cpProj;% projection on cylinder axis f(x,y,z,quat,mu)
+    obj_ctr = param.obj.sym.ctr;        % object center
+    obj_normal = param.obj.sym.n;       % object normal
     
     idx_oc = param.idx_oc;
     idx_quat = param.idx_quat;
     idx_mu = param.idx_mu;
     
-    % [TODO] approximation with projection on the normal
     k = param.k; % number of edges of approximated friction cone
     X_key = param.X_key;
     cstr = param.cstr;
@@ -40,9 +39,9 @@ function [ceq, ceq_grad, param, ht_ceq, ht_ceq_grad] = symNonLinEqConst(hand, pa
             if type == 'sph'
                 ceq(end+1) = norm(oc(:)-pc(:))-obj_r; % palm from object center to palm center
             elseif type == 'cyl'
-                cp_proj = obj_cp_proj(:,i);  % cp-projection as f(x,y,z,quat,mu)
+                cp_proj = obj_cpProj(:,i);  % cp-projection as f(x,y,z,quat,mu)
                 del_cp = pc - obj_ctr;
-                cp_bar = obj_ctr + obj_n*(del_cp.' * obj_n); % cp-proj as f(vx,vy)
+                cp_bar = obj_ctr + obj_normal*(del_cp.' * obj_normal); % cp-proj as f(vx,vy)
                 
                 ceq(end+1) = norm(cp_proj - cp_bar,2); % fix the projection
                 ceq(end+1) = norm(pc-cp_proj, 2)-obj_r; % orthogonal vector of length r
@@ -70,11 +69,11 @@ function [ceq, ceq_grad, param, ht_ceq, ht_ceq_grad] = symNonLinEqConst(hand, pa
                 % cp: contact point on the hand
                 cp = hand.F{idx_f}.Link{idx_l}.contact.symbolic.p; 
                 % projection of the contact point
-                cp_proj = obj_cp_proj(:,i);  % cp-projection as f(x,y,z,quat,mu)
+                cp_proj = obj_cpProj(:,i);  % cp-projection as f(x,y,z,quat,mu)
                 del_cp = cp - obj_ctr;       
                 
                 % cp-projection as f(q,rho,alpha)
-                cp_bar = obj_ctr + obj_n * (del_cp.' * obj_n);
+                cp_bar = obj_ctr + obj_normal * (del_cp.' * obj_normal);
                 c1 = norm(cp_proj - cp_bar,2);
                 c1 = subs(c1, {'L',rho_sym},{L,link.radius});
                 ceq(end+1) = c1; % fix the projection

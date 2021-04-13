@@ -3,5 +3,4 @@
 *.asv
 *.fig
 
-database/results/
-database/symbolic_functions/
+database/

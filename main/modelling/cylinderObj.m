@@ -1,0 +1,115 @@
+function Cylinder = cylinderObj(rad, h, quat,t, res,solMu)
+% objCylinder creates a cylinder object
+
+% Arguments:
+% rad = radius of the cylinder
+% h = height of the cylinder (along z-axis in object frame)
+% res = resolution (points on the circumference)
+% quat = quaternion to rotate the cylinder about
+%
+% Output: 
+% cylinder (structure with fields
+%   - type
+%   - res (resolution)
+%   - center
+%   - quat (quaternion for coord.transf. object to world frame
+%   - vertices (vertices of the approxiated cylinder)
+% add default parameters
+
+%% set default parameters
+if nargin < 5 % default resolution
+    res = 20;
+end
+if nargin < 4
+    t = [0;0;0]; % zero translation
+end
+if nargin < 3 % default quaternion: no rotation
+    quat = quaternion(0,0,0,1);
+end
+if nargin < 2 % default height
+    h = 10;
+end
+if nargin < 1 % default radius
+    rad = 3;
+end
+%%
+% computation of the center
+Htr = eye(4);               % HT: transform coord. from OF to WF
+Htr(1:3,4) = t;             
+center = Htr*[0;0;0;1];     % center only translated (rotation invariant)
+center = center(1:3);
+
+% computation of points on the cylinder surface
+[X,Y,Z] = cylinder(rad,res); % size (2, res) for X,Y and Z
+Z = h*(Z-0.5); % recenter and scale to length
+[n1,n2] = size(X);
+
+X = reshape(X',n1*n2,1); % size (2*res, 1)
+Y = reshape(Y',n1*n2,1);
+Z = reshape(Z',n1*n2,1);
+
+p = rotatepoint(quat,[X,Y,Z]); % points are (2*res,3)
+p = [p,ones(n1*n2,1)]; % (2*res,4)
+p_transl_t = Htr*p.'; % size (4, 2*res)  -> transposed
+p = p_transl_t(1:3,:).'; % translated and rotated points
+
+% equidistant points along the axis (symbolic expression)
+n = ceil(h/rad);                                    % expression for n pts along axis
+symAxPtArray = sym([zeros(2,n);h*(linspace(0,1,n)-0.5)]); % dim (3 x n), z in [-h/2, h/2]
+symQuat = sym('p',[4,1]);                % symbolic expression for quaternion
+symAxPtArrayRot = rotate_point(symAxPtArray,symQuat);    % use rotate_point for sym (not rotatepoint)
+symAxPtArrayHt = Htr*[symAxPtArrayRot;ones(1,n)];
+symAxPtArray = symAxPtArrayHt(1:3,:);                  % dim (3 x n)
+
+% equidistant points (numerical)
+axPtArray = [zeros(n,2),h*(linspace(0,1,n).'-0.5)]; % (N x 3)
+axPtArray = center + rotatepoint(quat,axPtArray).';  % (3 x N)
+
+% computation of the projection of the contact point on the axis
+symMu = sym('mu',[2,1]);
+symCtr = sym(['x';'y';'z']);
+symQuatConj = [symQuat(1);-symQuat(2);-symQuat(3);-symQuat(4)];
+symNormal = rotate_point([0;0;1],symQuatConj); % normal expressed in symbolic form
+
+cp_proj = sym([]);
+
+for i=1:2
+    % contact point projection on OF coord
+    cp_proj(:,i) = symCtr + symMu(i)*h*symNormal;  % contact point projection in WF coord
+end
+% retrieve points in shape (n1,n2) (for plotting)
+X = reshape(p(:,1),n2,n1)';
+Y = reshape(p(:,2),n2,n1)';
+Z = reshape(p(:,3),n2,n1)';
+
+%% constant fields 
+% (used as initial values for optimization)
+
+% [2 x res] arrays containing points to plot the surface
+Cylinder.xArray = X;
+Cylinder.yArray = Y;
+Cylinder.zArray = Z;
+
+Cylinder.ctr = center;   
+Cylinder.quat = quat;         % quaternion to rotate coordinates OF to WF
+Cylinder.n = rotatepoint(quat,[0,0,1]).';
+Cylinder.radius = rad;
+Cylinder.height = h;
+Cylinder.type = 'cyl';
+Cylinder.res = res;
+Cylinder.axPtArray = axPtArray;
+
+if nargin == 6 
+    % if the solution is already calculated,
+    % store the projected contact points to display
+    Cylinder.cp1 = center + rotatepoint(quat, [0,0,h*solMu(1)]).';
+    Cylinder.cp2 = center + rotatepoint(quat, [0,0,h*solMu(2)]).';
+end
+%% symbolic expressions (used for constraint description)
+Cylinder.sym.ctr = symCtr;% center of the object
+Cylinder.sym.quat = symQuat;         % q1,q2,q3,q4 (for optimization)
+Cylinder.sym.n = symNormal;  % axis of the cylinder
+Cylinder.sym.axisPtArray = symAxPtArray;        % (3 x n) coordinates of equidistant spheres
+Cylinder.sym.cpProj = cp_proj;   % (3 x ncp) projected CP (symbolic)
+
+
