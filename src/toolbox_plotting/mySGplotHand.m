@@ -1,12 +1,15 @@
-function myCustomizedSGplotHand(hand, factv, transp, plot_contacts)
+function mySGplotHand(hand, factv, transp, plot_contacts,plot_jointlocation)
 % Customized function to plot hand. Modified based on the function 'SGplotHand'
 % 
 % Input arguments:
 %     * hand: the hand structure to plot
-%     * factv: list of boolean variables to indicate the activation of fingers. If active is not empty, only ploy active fingers
+%     * factv: list of boolean variables to indicate the activation of fingers. If active is not empty, only plot active fingers
 %     * transp: numerical parameter that represents surface transparency
 %     * plott_contacts: if plot contact points (and normal vectors) on the model
 
+    if nargin < 5
+        plot_jointlocation = false;
+    end
     if nargin < 4
         plot_contacts = true;
     end
@@ -29,7 +32,9 @@ function myCustomizedSGplotHand(hand, factv, transp, plot_contacts)
         end
 
         % [1/3] plot the finger base
-        plot3(hand.F{j}.base(1,4),hand.F{j}.base(2,4),hand.F{j}.base(3,4),'r*'); % base position in World
+        if plot_jointlocation
+            plot3(hand.F{j}.base(1,4),hand.F{j}.base(2,4),hand.F{j}.base(3,4),'r*'); % base position in World
+        end
         hold on;
 
         % plot the joints and the end tip
@@ -45,17 +50,19 @@ function myCustomizedSGplotHand(hand, factv, transp, plot_contacts)
             if hand.type=="AllegroHandLeft" || hand.type=="AllegroHandRight" 
                 if i<hand.F{j}.n+1
                     mySGplotLink_allegro(p1,p2,[28/2 28/2],transp,[0.30 0.30 0.30]);
-                else           
+                else  % fingertip         
                     mySGplotLink_allegro(p1,p2,[28/2 28/2],transp,[0.9 0.9 0.9]);
                 end
             else
                 mySGplotLink(p1,p2,5,transp);
             end
-            % plot the joint location
-            if i < hand.F{j}.n+1
-                h = plot3(referenceJoint(1,4),referenceJoint(2,4),referenceJoint(3,4),'ro');          
-                set(h,'MarkerSize',8);
-                set(h,'LineWidth',3);
+            if plot_jointlocation
+                % plot the joint location
+                if i < hand.F{j}.n+1
+                    h = plot3(referenceJoint(1,4),referenceJoint(2,4),referenceJoint(3,4),'ro');          
+                    set(h,'MarkerSize',8);
+                    set(h,'LineWidth',3);
+                end
             end
         end
 
@@ -67,7 +74,7 @@ function myCustomizedSGplotHand(hand, factv, transp, plot_contacts)
             x_tip = R_tip(:,1);
             y_tip = R_tip(:,2);
             z_tip = R_tip(:,3);
-            plotAvlContacts(p_tip, {x_tip,y_tip,z_tip});
+            % plotAvlContacts(p_tip, {x_tip,y_tip,z_tip});
             %%% Step 2/2: plot contact points on the side of finger digits and their normal directions
             if isfield(hand.F{j},'avlConSet') % available contact set
                 for i = 1:length(hand.F{j}.avlConSet)
@@ -77,8 +84,6 @@ function myCustomizedSGplotHand(hand, factv, transp, plot_contacts)
                         plotAvlContacts(hand.F{j}.avlConSet{i}.P, hand.F{j}.avlConSet{i}.normVec);
                     end
                 end
-            else
-                warning('Finger avlConSet not exist.');
             end
         end
         

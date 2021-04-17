@@ -46,7 +46,7 @@ function visualizeOptimizationConfig(hand, object_list, X_sol, param, fig_title,
                 object = updateObjectConfig(object_list, soln);
                 plotObject(object);
                 hold on;
-                scatter3(oc(1),oc(2),oc(3),100,'b','filled');
+                %scatter3(oc(1),oc(2),oc(3),100,'b','filled');
                 plot_contact_info = true;
             case 'cell' % multiple objects available
                 for i = 1:numel(object_list)

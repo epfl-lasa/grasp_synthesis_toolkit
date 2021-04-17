@@ -21,15 +21,16 @@ else
     for i = 1:nc
         disp(c_name{i});
         c_temp = c(L+1: L+c_idx(i));
-        if ~all(c_temp<=0)
-            disp(c_temp);
-        end
+%         if ~all(c_temp<=0)
+%             disp(c_temp);
+%         end
+        disp(c_temp);
         L = L + c_idx(i);
     end
 end
 
 %% Nonlinear Equality Constraints
-fprintf('\n* Equality Constraint: ');
+fprintf('\n* Equality Constraint:\n');
 ceq = nonl_ceq(Xcell{:});
 ceq = ceq(:).';
 ceq_idx = param.ceq_idx;

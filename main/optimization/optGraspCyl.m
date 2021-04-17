@@ -41,7 +41,7 @@ for i = 1:ncp
         tag(end+1) = 'P';
     else
         [idx_f,idx_l] = deal(os_info{i}(1),os_info{i}(2));
-        idx_finger(i) = idx_f
+        idx_finger(i) = idx_f;
         nq_pre = min([idx_l, hand.F{idx_f}.n]); % number of joints ahead of idx_lnk, in case idx_lnk > finger.n (possible for fingertip link)
         q_idx = find(hand.qin == idx_f, 1); % first non-zero position (starting point index) of the indices of all joints of the finger in the hand
         
@@ -96,7 +96,7 @@ obj_quat_0 = [0;0;0;1]; % added 3 rotation parameters
 q_lb = hand.limit(:,1); % joint lower limit (fully open)
 q_ub = hand.limit(:,2); % joint upper limit (fully closed)
 
-r = 0.5; % r=0: use lower bound, r=1: use upper bound
+r = 0.2; % r=0: use lower bound, r=1: use upper bound
 q_0 = r*q_lb(qactv_loop) + (1-r)*q_ub(qactv_loop); % (nq_actv,1)
 
 % contact points on cylinder
@@ -207,8 +207,8 @@ ub(idx_quat) = 1;
 
 % mu (projection of contact point on cylinder normal)
 % must lie within the cylinder (i.e. in [-0.5,0.5], mu=0 at the center)
-lb(idx_mu) = -0.5;
-ub(idx_mu) = 0.5;
+lb(idx_mu) = -0.4;
+ub(idx_mu) = 0.4;
 
 % Only guarantee that object must lie inside two link rmaps, but no limit
 % concerning the radius of object. E.g. distance between object center and
@@ -223,8 +223,8 @@ lb(idx_phi) = -pi; % + deg2rad(1); % avoid overlap
 ub(idx_phi) = pi;
 
 %%% boundary of alp % 3 in total
-lb(idx_alp) = 0;
-ub(idx_alp) = 1;
+lb(idx_alp) = 0.1;
+ub(idx_alp) = 0.9;
 
 %%% boundary of palm
 lb(idx_pvec) = pvec_lb;
@@ -300,7 +300,7 @@ end
 nonlcon = @(X)optGraspJS_nonlcon(X);
 
 %% Objective Function (Symbolic Expression)
-symObjectiveFunction(hand, param);
+symObjectiveSingleGrasp(hand, param);
 objfun = @(X)optGraspJS_objfun(X);
 
 %% Problem Configuration
@@ -329,6 +329,7 @@ else
     if_solution = true;
     tag(end+1:end+4) = 'true';
     fprintf('Feasible solution found! (exitflag: %d)\n', exitflag);
+    evaluateOptimizationResults(X_sol, param); % Check if all constraints are satisfied
 end
 
 if if_plot_trial

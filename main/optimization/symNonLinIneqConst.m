@@ -35,18 +35,50 @@ function [c, c_grad, param, ht_c, ht_c_grad] = symNonLinIneqConst(hand, param)
         else
             [idx_f, idx_l] = deal(os_info{i}(1),os_info{i}(2)); % index of finger and link
             finger = hand.F{idx_f};
-            nq_pre = min([idx_l, finger.n]); % number of joints ahead of idx_lnk, in case idx_lnk > finger.n (possible for fingertip link)
+            nq_pre = idx_l-1;
+            if (idx_l > finger.n)
+                warining("Nonlinear constriaint definition: link index of fingertip");
+            end
             for j = 1:nq_pre % Iterate over all links, including link in contact ('idx_l')
                 link = finger.Link{j};
-%                 if ~link.is_real
-%                     continue;
-%                 end
-                % [Cylinder implementation]
-                n_axpt = size(obj_axpt,2); % obj_axpt is (3 x n_points)
-                for k=1:n_axpt
-                    link_pos = link.symbolic.HT_next(1:3,4);
+                % define constraints only if the finger link is real
+                if link.is_real
+                    % [Cylinder implementation]
+                    nAxpt = size(obj_axpt,2); % obj_axpt is (3 x n_points)
+                    eta = 1.5;
+                    nLinkPoint = ceil(link.L/(2*hand.hand_radius*sqrt(eta^2-1)));
+                    pointDist = 1/nLinkPoint;
+                    del = pointDist/2 + [0:nLinkPoint-1].*pointDist;
+                    for k=1:nAxpt
+                        link_pos_this = link.symbolic.HT_this(1:3,4);
+                        link_pos_next = link.symbolic.HT_next(1:3,4);
+                        delPos = link_pos_next - link_pos_this;
+                        for l=1:nLinkPoint
+                            link_pos = link_pos_this + del(l)*delPos;
+                            % increase the radius by a factor eta
+                            c_ij = link_r*eta + obj_r - norm(link_pos-obj_axpt(:,k),2);
+                            c(end+1) = c_ij;
+                        end
+                    end
+                end
+            end
+            % define collision avoidance contacting link
+            link = finger.Link{idx_l};
+            %%% assume that the maximal penetration is 10% of the hand
+            %%% radius
+            d_max = hand.hand_radius * cos(asin(0.7));
+            nLinkPoint = ceil(link.L/d_max);
+            pointDist = 1/nLinkPoint;
+            del = pointDist/2 + [0:nLinkPoint-1].*pointDist;
+            for k=1:nAxpt
+                link_pos_this = link.symbolic.HT_this(1:3,4);
+                link_pos_next = link.symbolic.HT_next(1:3,4);
+                delPos = link_pos_next - link_pos_this;
+                for l=1:nLinkPoint
+                    link_pos = link_pos_this + del(l)*delPos;
+                    % take the true link radius here
                     c_ij = link_r + obj_r - norm(link_pos-obj_axpt(:,k),2);
-                    c(end+1) = c_ij; % c<=0;
+                    c(end+1) = c_ij;
                 end
             end
         end
@@ -65,20 +97,28 @@ function [c, c_grad, param, ht_c, ht_c_grad] = symNonLinIneqConst(hand, param)
     for i = 1:ncp
         f_idx_list(i) = os_info{i}(1);
     end
-    f_idx_list(~f_idx_list) = []; % remove 0 (palm) from list
-    n_diff = max(f_idx_list)-min(f_idx_list); % number of in-between fingers
-    
-    if n_diff>1 % in-between finger exists
-        for f = min(f_idx_list)+1:max(f_idx_list)-1
-            finger = hand.F{f}; % same as collision avoidance: father-links vs. object
-            for j = 1:finger.n-1
-                link = finger.Link{j};
-                n_axpt = size(obj_axpt,2);
-                for k=1:n_axpt
-                    % intermediate fingers should also be active!
-                    link_pos = link.symbolic.HT_next(1:3,4);
-                    c_ij = link_r + obj_r - norm(link_pos - obj_axpt(:,k),2) ;
-                    c(end+1) = c_ij;
+    inBetweenF = min(f_idx_list)+1:max(f_idx_list)-1; % indices of in-between fingers
+  
+    if ~isempty(inBetweenF) % in-between finger exists
+        for f = 1:length(inBetweenF)
+            finger = hand.F{inBetweenF(f)}; % same as collision avoidance: father-links vs. object
+            for i = 1:finger.n-1
+                link = finger.Link{i};
+                nAxpt = size(obj_axpt,2);
+                for k=1:nAxpt
+                    link_pos_this = link.symbolic.HT_this(1:3,4);
+                    link_pos_next = link.symbolic.HT_next(1:3,4);
+                    eta = 1.5;
+                    nLinkPoint = ceil(link.L/(2*hand.hand_radius*sqrt(eta^2-1)));
+                    pointDist = 1/nLinkPoint;
+                    del = pointDist/2 + [0:nLinkPoint-1].*pointDist; % in [0,1]
+                    delPos = link_pos_next - link_pos_this; % symbolic
+                    
+                    for j=1:nLinkPoint
+                        link_pos = link_pos_this + del(j)*delPos;
+                        c_ij = link_r + obj_r - norm(link_pos - obj_axpt(:,k),2) ;
+                        c(end+1) = c_ij;
+                    end
                 end
             end
         end
@@ -102,16 +142,16 @@ function [c, c_grad, param, ht_c, ht_c_grad] = symNonLinIneqConst(hand, param)
     % center and the finger base line
     %dist = norm(cross(obj_cnt-x1,obj_cnt-x2))/norm(x2-x1);
     palmPt = hand.P.points_inr(1,:).'; % point on the inner surface of the palm
-    n_axpt = size(obj_axpt,2);
+    nAxpt = size(obj_axpt,2);
     palmNormal = hand.P.contact.symbolic.n;
-%     for k=1:n_axpt
-%         dist = palmNormal.' * (obj_axpt(:,k)-palmPt); % project the object on the normal
-%         c(end+1) = link_r + obj_r - dist;
-%     end
-%     
-%     c_idx(end+1) = numel(c)-sum(c_idx);
-%     c_name{end+1} = 'Collision avoidance (object vs. palm)';
-%     fprintf('%d\n', c_idx(end));
+    for k=1:nAxpt
+        dist = palmNormal.' * (obj_axpt(:,k)-palmPt); % project the object on the normal
+        c(end+1) = link_r + obj_r - dist;
+    end
+    
+    c_idx(end+1) = numel(c)-sum(c_idx);
+    c_name{end+1} = 'Collision avoidance (object vs. palm)';
+    fprintf('%d\n', c_idx(end));
 
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     % Inequality Constraint 4: Collision Avoidance

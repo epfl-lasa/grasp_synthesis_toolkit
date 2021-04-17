@@ -7,7 +7,7 @@ setup_problem_config;
 
 %% Configuration of experiment
 recon.hand_model = false; % reconstruct hand models
-recon.object_model = false; % reconstruct object models
+recon.object_model = true; % reconstruct object models
 recon.rmap = false; % reconstruct reachability maps
 recon.os = false; % reconstruct opposition space
 
@@ -29,16 +29,17 @@ else
     fprintf('\n[1] Hand model loaded.\n');
 end
 %% Create Object Models
-radius = 20;
-height = 40;
-roll = pi/8;
-pitch = pi/6;
-yaw = 0;
-q = quaternion([yaw,pitch,roll],'euler', 'ZYX','frame');
-t = [0;0;0]; % translation
-cyl = cylinderObj(radius, height,q, t);
+cylParam.radius = 10;
+cylParam.height = 30;
+cylParam.roll = 0;
+cylParam.pitch = pi/2;
+cylParam.yaw = 0;
+% bad solution: roll = pi/8, pitch = pi/6, yaw = 0, os={[2,4],[3,4]}
+cylParam.quat = quaternion([cylParam.yaw,cylParam.pitch,cylParam.roll],'euler', 'ZYX','frame');
+cylParam.transl = [0;0;-60]; % translation
+cyl = cylinderObj(cylParam);
 
-plotCylinder(cyl);
+plotCylinder(cyl,true);
 
 %% Optimization
 
@@ -60,7 +61,17 @@ plotCylinder(cyl);
 % comprises the ad-/abduction degrees of freedom on the bottom of the finger.
 % The last link is used to model another virtual link at finger tip for convenience.
 
-osList = {{[1,4],[2,4]}};%,...
+osList = {{[0,0],[2,4]}};%,...
+% successful simulations achieved for:
+% {[2,3],[3,3]}
+% {[2,4],[3,4]}
+% {[0,0],[1,4]}
+% {[0,0],[2,4]}
+% {[1,4],[2,2]}     
+% failed:
+% {[2,4],[4,4]}
+% {[2,3],[2,4]}
+% {[1,4],[2,3]}
 %     {[2,4],[3,4]},...
 %     {[2,3],[3,3]},...
 %     {[2,2],[4,2]},...

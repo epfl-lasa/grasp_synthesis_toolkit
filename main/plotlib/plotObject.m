@@ -105,7 +105,7 @@ switch object.type
         hold on
         mySGplotCube(object);
     case 'cyl'
-        plotCylinder(object);
+        plotCylinder(object,false);
     case 'sph'
         mySGplotSphere(object);
 end

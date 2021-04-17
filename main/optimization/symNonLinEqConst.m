@@ -2,23 +2,23 @@
 function [ceq, ceq_grad, param, ht_ceq, ht_ceq_grad] = symNonLinEqConst(hand, param)
     os_info = param.os.os_info;
     ncp = param.ncp;            % number of contact points
-    obj_r = param.obj.radius;   % object radius
+    objRad = param.obj.radius;   % object radius
     type = param.obj.type;
     
     % symbolic expressions from the object
-    obj_cpProj = param.obj.sym.cpProj;% projection on cylinder axis f(x,y,z,quat,mu)
-    obj_ctr = param.obj.sym.ctr;        % object center
-    obj_normal = param.obj.sym.n;       % object normal
+    objCpProj = param.obj.sym.cpProj;% projection on cylinder axis f(x,y,z,quat,mu)
+    objCtr = param.obj.sym.ctr;        % object center
+    objN = param.obj.sym.n;       % object axis
     
-    idx_oc = param.idx_oc;
-    idx_quat = param.idx_quat;
-    idx_mu = param.idx_mu;
+    idxOc = param.idx_oc;
+    idxQuat = param.idx_quat;
+    idxMu = param.idx_mu;
     
     k = param.k; % number of edges of approximated friction cone
     X_key = param.X_key;
     cstr = param.cstr;
-    oc = X_key(idx_oc); % object center
-    quat = X_key(idx_quat);
+    oc = X_key(idxOc); % object center
+    quat = X_key(idxQuat);
     %mu = X_key(idx_mu);
     
     fprintf('\nConstructing Nonl. Equality Constraints: \n');
@@ -37,19 +37,19 @@ function [ceq, ceq_grad, param, ht_ceq, ht_ceq_grad] = symNonLinEqConst(hand, pa
             pc = hand.P.contact.symbolic.p; % palm contact
             %%% Notice that cp_dist is squared distance!!!
             if type == 'sph'
-                ceq(end+1) = norm(oc(:)-pc(:))-obj_r; % palm from object center to palm center
+                ceq(end+1) = norm(oc(:)-pc(:))-objRad; % palm from object center to palm center
             elseif type == 'cyl'
-                cp_proj = obj_cpProj(:,i);  % cp-projection as f(x,y,z,quat,mu)
-                del_cp = pc - obj_ctr;
-                cp_bar = obj_ctr + obj_normal*(del_cp.' * obj_normal); % cp-proj as f(vx,vy)
                 
-                ceq(end+1) = norm(cp_proj - cp_bar,2); % fix the projection
-                ceq(end+1) = norm(pc-cp_proj, 2)-obj_r; % orthogonal vector of length r
+                %[old]
+                %del_cp = pc - objCtr;
+                %cp_bar = objCtr + objN*(del_cp.' * objN); % cp-proj as f(vx,vy)
+                %ceq(end+1) = norm(cpProj - cp_bar,2); % fix the projection
+                %ceq(end+1) = norm(pc-cpProj, 2)-objRad; % orthogonal vector of length r               
                 
-                %del = pc - obj_cp_proj;     % vector from projection to CP
-                %ceq(end+1) = norm(del,2) - obj_r;
-                %p_proj = oc + mu(i)*obj_n;
-                %ceq(end+1) = norm(pc-p_proj,2) - obj_r;
+                cpProj = objCpProj(:,i);  % cp-projection as f(x,y,z,quat,mu)
+                del = pc - cpProj;
+                ceq(end+1) = objN.' * del;          % n orthogonal to (cp-cpProj)
+                ceq(end+1) = norm(del,2) - objRad;   % d(cp, cpProj) = 0
             end
         else
             % definition of contact points on fingers
@@ -61,35 +61,33 @@ function [ceq, ceq_grad, param, ht_ceq, ht_ceq_grad] = symNonLinEqConst(hand, pa
             rho_sym = ['rho',num2str(idx_f),num2str(idx_l)]; % name of rho associated with this contact
             if type=='sph'
                 cp_dist = link.contact.symbolic.cp_dist; % distance from contact point to object center
-                cp_dist = subs(cp_dist, {'L','r',rho_sym}, {L,obj_r,link.radius});
-                ceq(end+1) = cp_dist - obj_r^2;
+                cp_dist = subs(cp_dist, {'L','r',rho_sym}, {L,objRad,link.radius});
+                ceq(end+1) = cp_dist - objRad^2;
             elseif type=='cyl'
                 % constraint d(obj_cp_proj, cp) = r 
                 % obj_cp_proj: projection on axis of the cylinder
                 % cp: contact point on the hand
                 cp = hand.F{idx_f}.Link{idx_l}.contact.symbolic.p; 
                 % projection of the contact point
-                cp_proj = obj_cpProj(:,i);  % cp-projection as f(x,y,z,quat,mu)
-                del_cp = cp - obj_ctr;       
-                
+                cpProj = objCpProj(:,i);  % cp-projection as f(x,y,z,quat,mu)
+                     
                 % cp-projection as f(q,rho,alpha)
-                cp_bar = obj_ctr + obj_normal * (del_cp.' * obj_normal);
-                c1 = norm(cp_proj - cp_bar,2);
+                % [old implementation]
+                % del_cp = cp - obj_ctr;  
+                % cp_bar = obj_ctr + obj_normal * (del_cp.' * obj_normal);
+                %c1 = norm(cp_proj - cp_bar,2);
+                %c1 = subs(c1, {'L',rho_sym},{L,link.radius});
+                
+                % projection of cp on axis equals cp_proj
+                del_cp = cp - cpProj;
+                c1 = objN.' * del_cp; % projection should be zero
                 c1 = subs(c1, {'L',rho_sym},{L,link.radius});
                 ceq(end+1) = c1; % fix the projection
                 
-                c2 = norm(cp-cp_proj, 2)-obj_r;
+                c2 = norm(del_cp, 2)-objRad;
                 c2 = subs(c2, {'L',rho_sym},{L,link.radius});
                 ceq(end+1) = c2; % orthogonal vector of length r
                 
-                %obj_cp_proj = obj_cp(:,i);  % CP projected on obj-axis
-                %del = cp - obj_cp_proj;% vector from projection to object center
-                %c = norm(del,2) - obj_r;
-%                 obj_cp = obj_cp(:,i);
-%                 del = cp-obj_cp;
-%                 c = norm(del,2);
-%                 c = subs(c, {'L',rho_sym},{L,link.radius});
-%                 ceq(end+1) = c;
             end
         end
          % notice that cp_dist is squared; so: cp_dist == r*r;
@@ -119,10 +117,10 @@ function [ceq, ceq_grad, param, ht_ceq, ht_ceq_grad] = symNonLinEqConst(hand, pa
                 rho_sym = ['rho',num2str(idx_f),num2str(idx_l)];
 
                 FC_i = link.contact.symbolic.FC; % (3,k)
-                FC_i = subs(FC_i, {'L','r',rho_sym}, {link.L,obj_r,link.radius});
+                FC_i = subs(FC_i, {'L','r',rho_sym}, {link.L,objRad,link.radius});
 
                 TC_i = link.contact.symbolic.TC; % (3,k)
-                TC_i = subs(TC_i, {'L','r',rho_sym}, {link.L,obj_r,link.radius});
+                TC_i = subs(TC_i, {'L','r',rho_sym}, {link.L,objRad,link.radius});
             end
             W_i = cat(1,FC_i,TC_i); % (6,k) construct wrench vector
             W(:,(i-1)*k+1:i*k) = W_i; % (6,ncp*k) stack wrenches from this contact point to the entire wrench

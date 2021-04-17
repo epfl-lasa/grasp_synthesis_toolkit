@@ -4,8 +4,8 @@
 
 %%
 % delete old problem config
-if isfile('../database/problem_config.mat')
-    delete('../database/problem_config.mat');
+if isfile('..\database\problem_config.mat')
+    delete('..\database\problem_config.mat');
 end
 
 % find directory of parent folder
@@ -13,8 +13,8 @@ current_dir = pwd;
 sep = strfind(pwd,filesep);
 parent_dir = current_dir(1:sep(end)-1);
 
-src_dir = [parent_dir, '/src'];
-database_dir = [parent_dir, '/database'];
+src_dir = [parent_dir, '\src'];
+database_dir = [parent_dir, '\database'];
 
 %% Set default values for parameters
 k = 3; % number of edges for approximating the friction cone
@@ -42,5 +42,5 @@ tol_x = 1e-6;
 %% Select constraints
 cstr.fc = true; % use force closure constraints
 
-save([database_dir, '/problem_config.mat']);
+save([database_dir, '\problem_config.mat']);
 disp('* Updated problem config saved.');
