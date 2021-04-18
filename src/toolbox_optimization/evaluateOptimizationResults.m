@@ -5,7 +5,7 @@ function evaluateOptimizationResults(X_sol, param)
 Xcell = num2cell(X_sol);
 
 %% Nonlinear Inequality Constraints
-fprintf('\n* Inequality Constraint: ');
+fprintf('\n* Inequality Constraint:\n');
 c = nonl_c(Xcell{:});
 c = c(:).';
 c_idx = param.c_idx;
@@ -19,12 +19,16 @@ if ~isequal(length(c),sum(c_idx))
 else
     L = 0; % length counter
     for i = 1:nc
-        disp(c_name{i});
+        %fprintf(['\t',c_name{i},':']);
         c_temp = c(L+1: L+c_idx(i));
-%         if ~all(c_temp<=0)
+        if ~all(c_temp<=0)
+            n_violated = sum(c_temp>0);
+            fprintf("\tConstraint violations: %d of %d \t %s\n ", n_violated, length(c_temp),c_name{i});
 %             disp(c_temp);
-%         end
-        disp(c_temp);
+        else
+            fprintf("\tConstraint violations: 0 of 0 \t %s\n", c_name{i});
+        end
+        % disp(c_temp);
         L = L + c_idx(i);
     end
 end
@@ -48,6 +52,8 @@ else
         ceq_temp = ceq(L+1: L+ceq_idx(i));
         if any(ceq_temp)
             disp(ceq_temp);
+        else
+            fprintf("\tConstraint violations: 0 of 0\n");
         end
         L = L + ceq_idx(i);
     end

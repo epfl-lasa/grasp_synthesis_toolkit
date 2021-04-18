@@ -61,8 +61,8 @@ function [obj, obj_grad, ht_obj, ht_obj_grad] = symObjectiveSingleGrasp(hand, pa
     
     %%% objective function
     eta = 0.5; % balance coefficient
-    %obj = eta*(Cfc + Ct) + (1-eta)*Cq;
-    obj = Cq + Cmu;
+    obj = eta*(Cfc + Ct) + (1-eta)*Cq;
+    % obj = Cq + Cmu;
     %%% Save symbolic form of objective function
     matlabFunction(obj,'File','../database/symbolic_functions/objfun','Vars',X_key,'Optimize',false);
     

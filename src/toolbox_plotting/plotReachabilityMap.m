@@ -39,6 +39,7 @@ end
 cmap = distinguishable_colors(total_link);
 
 %%% plot hand model
+figure
 mySGplotHand(hand); % plot robotic hand at its initial position
 hold on;
 

@@ -9,7 +9,7 @@ setup_problem_config;
 recon.hand_model = false; % reconstruct hand models
 recon.object_model = true; % reconstruct object models
 recon.rmap = false; % reconstruct reachability maps
-recon.os = false; % reconstruct opposition space
+recon.os = true; % reconstruct opposition space
 
 %% Create Hand Models
 if recon.hand_model || ~exist('hand','var')
@@ -29,16 +29,17 @@ else
     fprintf('\n[1] Hand model loaded.\n');
 end
 %% Create Object Models
-cylParam.radius = 10;
+cylParam.radius = 15;
 cylParam.height = 30;
 cylParam.roll = 0;
 cylParam.pitch = pi/2;
 cylParam.yaw = 0;
 % bad solution: roll = pi/8, pitch = pi/6, yaw = 0, os={[2,4],[3,4]}
 cylParam.quat = quaternion([cylParam.yaw,cylParam.pitch,cylParam.roll],'euler', 'ZYX','frame');
-cylParam.transl = [0;0;-60]; % translation
+cylParam.transl = [0;-30;-30]; % translation
 cyl = cylinderObj(cylParam);
 
+mySGplotHand(hand);
 plotCylinder(cyl,true);
 
 %% Optimization
@@ -63,20 +64,21 @@ plotCylinder(cyl,true);
 
 osList = {{[0,0],[2,4]}};%,...
 % successful simulations achieved for:
+% {[0,0],[2,4]} % radius: 10, height: 30
+% {[0,0],[3,4]} % radius: 18, height: 30
+% {[2,4],[3,4]} % radius: 14, height: 30
+% {[2,3],[3,3]} % radius: 14, height: 30
+% {[2,2],[3,2]} % radius: 14, height: 30
+% [deprecated]
 % {[2,3],[3,3]}
 % {[2,4],[3,4]}
 % {[0,0],[1,4]}
 % {[0,0],[2,4]}
 % {[1,4],[2,2]}     
 % failed:
-% {[2,4],[4,4]}
-% {[2,3],[2,4]}
 % {[1,4],[2,3]}
-%     {[2,4],[3,4]},...
-%     {[2,3],[3,3]},...
-%     {[2,2],[4,2]},...
-%     {[3,4],[0,0]},...
-%     {[2,2],[2,4]}};
+% {[2,2],[4,2]},...
+% {[2,2],[2,4]}};
 
 for i = 1:numel(osList)
     fprintf('Experiment: %d\n', i);

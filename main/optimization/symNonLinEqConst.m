@@ -47,9 +47,13 @@ function [ceq, ceq_grad, param, ht_ceq, ht_ceq_grad] = symNonLinEqConst(hand, pa
                 %ceq(end+1) = norm(pc-cpProj, 2)-objRad; % orthogonal vector of length r               
                 
                 cpProj = objCpProj(:,i);  % cp-projection as f(x,y,z,quat,mu)
+                % [old]
+                % del = pc - cpProj;
+                % ceq(end+1) = objN.' * del;          % n orthogonal to (cp-cpProj)
+                
                 del = pc - cpProj;
-                ceq(end+1) = objN.' * del;          % n orthogonal to (cp-cpProj)
-                ceq(end+1) = norm(del,2) - objRad;   % d(cp, cpProj) = 0
+                ceq(end+1) = (objN.' * del)^2;           % n orthogonal to (cp-cpProj)
+                ceq(end+1) = norm(del,2)^2 - objRad^2;   % d(cp, cpProj) = 0
             end
         else
             % definition of contact points on fingers
@@ -80,11 +84,19 @@ function [ceq, ceq_grad, param, ht_ceq, ht_ceq_grad] = symNonLinEqConst(hand, pa
                 
                 % projection of cp on axis equals cp_proj
                 del_cp = cp - cpProj;
-                c1 = objN.' * del_cp; % projection should be zero
+                % [old version]
+%                 c1 = objN.' * del_cp; % projection should be zero
+%                 c1 = subs(c1, {'L',rho_sym},{L,link.radius});                              
+                c1 = (objN.' * del_cp)^2; % projection should be zero
                 c1 = subs(c1, {'L',rho_sym},{L,link.radius});
                 ceq(end+1) = c1; % fix the projection
                 
-                c2 = norm(del_cp, 2)-objRad;
+                
+                % [old]
+                % c2 = norm(del_cp, 2)-objRad;
+                % c2 = subs(c2, {'L',rho_sym},{L,link.radius});
+                
+                c2 = norm(del_cp, 2)^2-objRad^2;
                 c2 = subs(c2, {'L',rho_sym},{L,link.radius});
                 ceq(end+1) = c2; % orthogonal vector of length r
                 
@@ -135,7 +147,7 @@ function [ceq, ceq_grad, param, ht_ceq, ht_ceq_grad] = symNonLinEqConst(hand, pa
     % Equality constraint 3: normalized quaternion
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     fprintf('* normalize quaternion :')
-    ceq(end+1)= norm(quat,2) - 1;
+    ceq(end+1)= norm(quat,2)^2 - 1;
     ceq_idx(end+1) = numel(ceq) - sum(ceq_idx);
     ceq_name{end+1} = 'Quaternion normalization';
     fprintf('%d\n', ceq_idx(end));

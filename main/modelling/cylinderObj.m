@@ -60,14 +60,18 @@ p_transl_t = Htr*p.'; % size (4, 2*res)  -> transposed
 p = p_transl_t(1:3,:).'; % translated and rotated points
 
 % equidistant points along the axis (symbolic expression)
-dmin = rad*cos(asin(0.7));
+dmin = rad*cos(asin(0.5));
 nPoints = ceil(h/dmin);                       % expression for n pts along axis
 pointDist = h/nPoints;
 distArray = pointDist/2 + [0:nPoints-1]*pointDist - h/2;
 symAxPtArray = sym([zeros(2,nPoints);distArray]); % dim (3 x n), z in [-h/2, h/2]
 symQuat = sym('p',[4,1]);                % symbolic expression for quaternion
 symAxPtArrayRot = rotate_point(symAxPtArray,symQuat);    % use rotate_point for sym (not rotatepoint)
-symAxPtArrayHt = Htr*[symAxPtArrayRot;ones(1,nPoints)];
+symCtr = sym(['x';'y';'z']);
+symHT = sym(eye(4));
+symHT(1:3,4) = symCtr;
+symAxPtArrayHt = symHT*[symAxPtArrayRot;ones(1,nPoints)];
+% [old] symAxPtArrayHt = Htr*[symAxPtArrayRot;ones(1,nPoints)];
 symAxPtArray = symAxPtArrayHt(1:3,:);                  % dim (3 x n)
 
 % equidistant points (numerical)
@@ -76,7 +80,6 @@ axPtArray = center + rotatepoint(quat,axPtArray).';  % (3 x N)
 
 % computation of the projection of the contact point on the axis
 symMu = sym('mu',[2,1]);
-symCtr = sym(['x';'y';'z']);
 symNormal = rotate_point([0;0;1],symQuat); % normal expressed in symbolic form
 
 cp_proj = sym([]);

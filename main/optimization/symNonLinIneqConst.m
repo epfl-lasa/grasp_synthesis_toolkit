@@ -64,9 +64,10 @@ function [c, c_grad, param, ht_c, ht_c_grad] = symNonLinIneqConst(hand, param)
             end
             % define collision avoidance contacting link
             link = finger.Link{idx_l};
+            nAxpt = size(obj_axpt,2); % obj_axpt is (3 x n_points)
             %%% assume that the maximal penetration is 10% of the hand
             %%% radius
-            d_max = hand.hand_radius * cos(asin(0.7));
+            d_max = hand.hand_radius * cos(asin(0.5));
             nLinkPoint = ceil(link.L/d_max);
             pointDist = 1/nLinkPoint;
             del = pointDist/2 + [0:nLinkPoint-1].*pointDist;
@@ -146,7 +147,7 @@ function [c, c_grad, param, ht_c, ht_c_grad] = symNonLinIneqConst(hand, param)
     palmNormal = hand.P.contact.symbolic.n;
     for k=1:nAxpt
         dist = palmNormal.' * (obj_axpt(:,k)-palmPt); % project the object on the normal
-        c(end+1) = link_r + obj_r - dist;
+        c(end+1) = (link_r + obj_r)^2 - dist^2;
     end
     
     c_idx(end+1) = numel(c)-sum(c_idx);
