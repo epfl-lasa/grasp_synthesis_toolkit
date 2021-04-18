@@ -40,7 +40,7 @@ cylParam.transl = [0;-30;-30]; % translation
 cyl = cylinderObj(cylParam);
 
 mySGplotHand(hand);
-plotCylinder(cyl,true);
+plotCylinder(cyl,false);
 
 %% Optimization
 
