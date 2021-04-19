@@ -29,19 +29,37 @@ else
     fprintf('\n[1] Hand model loaded.\n');
 end
 %% Create Object Models
-cylParam.radius = 15;
-cylParam.height = 30;
-cylParam.roll = 0;
-cylParam.pitch = pi/2;
-cylParam.yaw = 0;
-% bad solution: roll = pi/8, pitch = pi/6, yaw = 0, os={[2,4],[3,4]}
-cylParam.quat = quaternion([cylParam.yaw,cylParam.pitch,cylParam.roll],'euler', 'ZYX','frame');
-cylParam.transl = [0;-30;-30]; % translation
-cyl = cylinderObj(cylParam);
+type = 'comp'
+switch type
+    case 'cyl'
+        Param.radius = 14;
+        Param.height = 30;
+        Param.roll = 0;
+        Param.pitch = pi/2;
+        Param.yaw = 0;
+        % bad solution: roll = pi/8, pitch = pi/6, yaw = 0, os={[2,4],[3,4]}
+        Param.quat = quaternion([Param.yaw,Param.pitch,Param.roll],'euler', 'ZYX','frame');
+        Param.transl = [0;0;-60]; % translation
+        object = cylinderObj(Param);
 
-mySGplotHand(hand);
-plotCylinder(cyl,false);
-
+        mySGplotHand(hand);
+        plotCylinder(object,false);
+    case 'comp'
+        Param.radius = 12;
+        Param.height = 20;
+        Param.roll = 0;
+        Param.pitch = -pi/2;
+        Param.yaw = 0;
+        % bad solution: roll = pi/8, pitch = pi/6, yaw = 0, os={[2,4],[3,4]}
+        Param.quat = quaternion([Param.yaw,Param.pitch,Param.roll],'euler', 'ZYX','frame');
+        Param.transl = [0;0;-100]; % translation
+        
+        Param.sphereCenter = [0,0,20;15,0,20;-15,0,20];
+        Param.sphereRadius = [12,12,12];
+        object = compObj(Param);
+        mySGplotHand(hand);
+        plotCompObject(object,false);
+end
 %% Optimization
 
 % List of Opposition Space pairs, used as candidates for grasping.
@@ -62,7 +80,7 @@ plotCylinder(cyl,false);
 % comprises the ad-/abduction degrees of freedom on the bottom of the finger.
 % The last link is used to model another virtual link at finger tip for convenience.
 
-osList = {{[0,0],[2,4]}};%,...
+osList = {{[1,4],[2,4]}};%,...
 % successful simulations achieved for:
 % {[0,0],[2,4]} % radius: 10, height: 30
 % {[0,0],[3,4]} % radius: 18, height: 30
@@ -84,7 +102,6 @@ for i = 1:numel(osList)
     fprintf('Experiment: %d\n', i);
     
     os_pair = osList{i};
-    object = cyl; % pick up a random object from object lists
 
     file_title = ['single_grasp_'...
         '_F',num2str(os_pair{1}(1)),'L',num2str(os_pair{1}(2)),...

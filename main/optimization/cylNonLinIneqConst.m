@@ -1,5 +1,5 @@
 % Obtain the symbolic form of nonlinear inequality constraints
-function [c, c_grad, param, ht_c, ht_c_grad] = symNonLinIneqConst(hand, param)
+function [c, c_grad, param, ht_c, ht_c_grad] = cylNonLinIneqConst(hand, param)
     os_info = param.os.os_info;
     
     % parameters

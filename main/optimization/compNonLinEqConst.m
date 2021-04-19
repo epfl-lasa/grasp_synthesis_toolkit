@@ -1,8 +1,8 @@
 % Obtain the symbolic form of nonlinear inequality constraints
-function [ceq, ceq_grad, param, ht_ceq, ht_ceq_grad] = symNonLinEqConst(hand, param)
+function [ceq, ceq_grad, param, ht_ceq, ht_ceq_grad] = compNonLinEqConst(hand, param)
     os_info = param.os.os_info;
     ncp = param.ncp;            % number of contact points
-    objRad = param.obj.radius;   % object radius
+    objRad = param.obj.radius;  % object radius
     type = param.obj.type;
     
     % symbolic expressions from the object
@@ -22,7 +22,9 @@ function [ceq, ceq_grad, param, ht_ceq, ht_ceq_grad] = symNonLinEqConst(hand, pa
     %mu = X_key(idx_mu);
     
     fprintf('\nConstructing Nonl. Equality Constraints: \n');
-    
+    if ~strcmp(type, 'comp')
+        warning("Nonlinear Inequality Constraint: object type inconsistent");
+    end
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     % Equality Constraint 1: Contact points on object surface
     % dist. between contact points and object ctr equals object radius
@@ -34,27 +36,11 @@ function [ceq, ceq_grad, param, ht_ceq, ht_ceq_grad] = symNonLinEqConst(hand, pa
     
     for i = 1:ncp
         if ~all(os_info{i}) % This is the palm
-            pc = hand.P.contact.symbolic.p; % palm contact
-            %%% Notice that cp_dist is squared distance!!!
-            if type == 'sph'
-                ceq(end+1) = norm(oc(:)-pc(:))-objRad; % palm from object center to palm center
-            elseif type == 'cyl'
-                
-                %[old]
-                %del_cp = pc - objCtr;
-                %cp_bar = objCtr + objN*(del_cp.' * objN); % cp-proj as f(vx,vy)
-                %ceq(end+1) = norm(cpProj - cp_bar,2); % fix the projection
-                %ceq(end+1) = norm(pc-cpProj, 2)-objRad; % orthogonal vector of length r               
-                
-                cpProj = objCpProj(:,i);  % cp-projection as f(x,y,z,quat,mu)
-                % [old]
-                % del = pc - cpProj;
-                % ceq(end+1) = objN.' * del;          % n orthogonal to (cp-cpProj)
-                
-                del = pc - cpProj;
-                ceq(end+1) = (objN.' * del)^2;           % n orthogonal to (cp-cpProj)
-                ceq(end+1) = norm(del,2)^2 - objRad^2;   % d(cp, cpProj) = 0
-            end
+            pc = hand.P.contact.symbolic.p;         % palm contact
+            cpProj = objCpProj(:,i);                % cp-projection as f(x,y,z,quat,mu)
+            del = pc - cpProj;
+            ceq(end+1) = (objN.' * del)^2;          % n orthogonal to (cp-cpProj)
+            ceq(end+1) = norm(del,2)^2 - objRad^2;  % d(cp, cpProj) = R
         else
             % definition of contact points on fingers
             [idx_f,idx_l] = deal(os_info{i}(1),os_info{i}(2));
@@ -63,44 +49,19 @@ function [ceq, ceq_grad, param, ht_ceq, ht_ceq_grad] = symNonLinEqConst(hand, pa
             link = finger.Link{idx_l};
             L = link.L;
             rho_sym = ['rho',num2str(idx_f),num2str(idx_l)]; % name of rho associated with this contact
-            if type=='sph'
-                cp_dist = link.contact.symbolic.cp_dist; % distance from contact point to object center
-                cp_dist = subs(cp_dist, {'L','r',rho_sym}, {L,objRad,link.radius});
-                ceq(end+1) = cp_dist - objRad^2;
-            elseif type=='cyl'
-                % constraint d(obj_cp_proj, cp) = r 
-                % obj_cp_proj: projection on axis of the cylinder
-                % cp: contact point on the hand
-                cp = hand.F{idx_f}.Link{idx_l}.contact.symbolic.p; 
-                % projection of the contact point
-                cpProj = objCpProj(:,i);  % cp-projection as f(x,y,z,quat,mu)
-                     
-                % cp-projection as f(q,rho,alpha)
-                % [old implementation]
-                % del_cp = cp - obj_ctr;  
-                % cp_bar = obj_ctr + obj_normal * (del_cp.' * obj_normal);
-                %c1 = norm(cp_proj - cp_bar,2);
-                %c1 = subs(c1, {'L',rho_sym},{L,link.radius});
+
+            % cp: contact point on the hand
+            cp = hand.F{idx_f}.Link{idx_l}.contact.symbolic.p; 
+            % cpProj: projection of the contact point
+            cpProj = objCpProj(:,i);  % cp-projection as f(x,y,z,quat,mu)
+            del_cp = cp - cpProj;                             
+            c1 = (objN.' * del_cp)^2; % projection = 0 (take squared constraint!)
+            c1 = subs(c1, {'L',rho_sym},{L,link.radius});
+            ceq(end+1) = c1;          % add projecton constraint
                 
-                % projection of cp on axis equals cp_proj
-                del_cp = cp - cpProj;
-                % [old version]
-%                 c1 = objN.' * del_cp; % projection should be zero
-%                 c1 = subs(c1, {'L',rho_sym},{L,link.radius});                              
-                c1 = (objN.' * del_cp)^2; % projection should be zero
-                c1 = subs(c1, {'L',rho_sym},{L,link.radius});
-                ceq(end+1) = c1; % fix the projection
-                
-                
-                % [old]
-                % c2 = norm(del_cp, 2)-objRad;
-                % c2 = subs(c2, {'L',rho_sym},{L,link.radius});
-                
-                c2 = norm(del_cp, 2)^2-objRad^2;
-                c2 = subs(c2, {'L',rho_sym},{L,link.radius});
-                ceq(end+1) = c2; % orthogonal vector of length r
-                
-            end
+            c2 = norm(del_cp, 2)^2-objRad^2; % distance between cp and cpProj is R
+            c2 = subs(c2, {'L',rho_sym},{L,link.radius});
+            ceq(end+1) = c2;          % add length constraint
         end
          % notice that cp_dist is squared; so: cp_dist == r*r;
     end

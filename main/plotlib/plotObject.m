@@ -108,6 +108,8 @@ switch object.type
         plotCylinder(object,false);
     case 'sph'
         mySGplotSphere(object);
+    case 'comp'
+        plotCompObject(object,false);
 end
 
 axis('equal');

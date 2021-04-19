@@ -22,6 +22,18 @@ switch object.type
         mu = X_sol(param.idx_mu);
         
         object = cylinderObj(cylParam,mu);
+    case 'comp'
+        param.transl = X_sol(param.idx_oc);
+        param.height = param.obj.height;
+        param.radius = param.obj.radius;
+        quat = X_sol(param.idx_quat);
+        param.quat = quaternion(quat(1),quat(2),quat(3),quat(4));
+        param.res = 20;
+        param.sphereCenter = param.obj.relSphereCenter;
+        param.sphereRadius = param.obj.sphereRadius;
+        object = compObj(param);
+        
+        
     otherwise
     	error('NotImplementedError.');
 end

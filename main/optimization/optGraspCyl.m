@@ -223,8 +223,8 @@ lb(idx_phi) = -pi; % + deg2rad(1); % avoid overlap
 ub(idx_phi) = pi;
 
 %%% boundary of alp % 3 in total
-lb(idx_alp) = 0.1;
-ub(idx_alp) = 0.9;
+lb(idx_alp) = 0;
+ub(idx_alp) = 1;
 
 %%% boundary of palm
 lb(idx_pvec) = pvec_lb;
@@ -295,8 +295,14 @@ if ~all(X0<=ub)
 end
 
 %% Nonlinear Constraints (Symbolic Expression)
-[~,~,param] = symNonLinIneqConst(hand, param);
-[~,~,param] = symNonLinEqConst(hand, param);
+switch object.type
+    case 'cyl'
+        [~,~,param] = cylNonLinIneqConst(hand, param);
+        [~,~,param] = cylNonLinEqConst(hand, param);
+    case 'comp'
+        [~,~,param] = compNonLinEqConst(hand, param);
+        [~,~,param] = compNonLinIneqConst(hand, param);
+end
 nonlcon = @(X)optGraspJS_nonlcon(X);
 
 %% Objective Function (Symbolic Expression)
