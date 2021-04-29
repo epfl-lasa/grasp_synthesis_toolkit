@@ -91,10 +91,9 @@ function [map_hand, robot] = reachabilityMap(robot, fngrs2spl, if_plot, if_save)
                     map_link.n = [];
                 end
                 map_link.p = cat(1, map_link.p, transpose(link.p(:))); % (N,3), NOTICE that this is link base position
-                map_link.r = cat(1, map_link.r, transpose(link.r(:))); % (N,3), vector of radical direction (fixed w.r.t. link base)
+                map_link.r = cat(1, map_link.r, transpose(link.r(:))); % (N,3), vector of axial direction (fixed w.r.t. link base)
                 map_link.n = cat(1, map_link.n, transpose(link.n(:))); % (N,3), vector of normal direction of the link base (fixed w.r.t. link base)
-                map_finger{l} = map_link; % update
-                
+                map_finger{l} = map_link; % update 
             end
             
             if ~mod(idx, floor(num_q/10)) % print after completing every 1/10 samples

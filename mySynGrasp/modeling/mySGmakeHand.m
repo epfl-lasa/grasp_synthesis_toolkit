@@ -67,7 +67,7 @@ function hand = mySGmakeHand(F,T)
     %%% integrate symbolic form of contact points to the hand
     Cp = []; % (3, Ncp) to save the Ncp in total contact points
     Cn = []; % contact normal
-    Cr = []; % radical direction of contact
+    Cr = []; % axial direction of contact
     for i = 1:hand.n
         finger = hand.F{i};
         if ~isempty(finger.symbolic)
@@ -75,7 +75,7 @@ function hand = mySGmakeHand(F,T)
                 for j = 1:finger.n+1 % number of links on finger (plus fingertip)
                     Cp = cat(2, Cp, finger.Link{j}.contact.symbolic.p); % contact point coordinates
                     Cn = cat(2, Cn, finger.Link{j}.contact.symbolic.n); % contact normal directions
-                    Cr = cat(2, Cr, finger.Link{j}.contact.symbolic.r); % radical directions of link (from base to next base)
+                    Cr = cat(2, Cr, finger.Link{j}.contact.symbolic.r); % axial directions of link (from base to next base)
                 end
             catch
                 disp(finger.idx);

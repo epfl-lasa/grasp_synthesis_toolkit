@@ -12,7 +12,7 @@ function link = makeLink(HT_this, HT_next, idx, lactv, crdCyl)
 %     * link: struct, contains the following information of the link's reference point:
 %       * link.p: position of the reference point
 %       * link.n: normal vector of the reference point (pointing towards front/finger inner side)
-%       * link.r: radical direction vector of the link (pointing from the base to the next base)
+%       * link.r: axial direction vector of the link (pointing from the base to the next base)
 %       * link.L: length of the link
 
     if nargin < 4
@@ -38,7 +38,7 @@ function link = makeLink(HT_this, HT_next, idx, lactv, crdCyl)
     
     R = HT_next(1:3,1:3); % NOTICE THAT USE THE NEXT_LINK AS ORIENTATION REFERENCE
     link.p = p_this;
-    link.r = R(:,1); % X direction is the radical direction
+    link.r = R(:,1); % X direction is the axial direction
     link.n = R(:,2); % Y direction is the normal direction (pointing palm)
     link.L = norm(p_next-p_this); % constant
     

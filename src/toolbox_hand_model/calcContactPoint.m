@@ -5,7 +5,7 @@ function contact = calcContactPoint(link, crdCyl)
     % - link: reference point used to calculate the contact in the link. Use base of the link by default.
     %   Reference point can be obtained from 'makeLink' function.    
     %    - link.p: (3,1), position, reference point of the link;
-    %    - link.r: (3,1), radical direction of the link (pointing from the link base to the next base)
+    %    - link.r: (3,1), axial direction of the link (pointing from the link base to the next base)
     %    - link.n: (3,1), normal direction of the link (pointing from the ctr towards the inner (front) surface of the finger)
     %    - link.L: length of the link, used as upper boundary of z value. This is half of the link length.
     % 
@@ -23,7 +23,7 @@ function contact = calcContactPoint(link, crdCyl)
     % Output:
     % - contact: struct, desired contact point
     %    - contact.p: position (Cartesian coordinate)
-    %    - contact.r: radical direction at this contact point (should point along the link, same as link.r)
+    %    - contact.r: axial direction at this contact point (should point along the link, same as link.r)
     %    - contact.n: normal direction, pointing to the outside of the surface (transformed from link.n)
     %    - contact.crdCyl = [rho, phi, alp]: cylindrical coordinates of the contact
     %       point (use alp, the ratio, instead of z, the absolute value
@@ -68,7 +68,7 @@ function contact = calcContactPoint(link, crdCyl)
     contact.refCF = refCF*localTransf_test; % reference CF USED TO CALCULATE the contact point (see above explanation)
     
     % POST-MULTIPLICATION if transform w.r.t. current reference frame
-    %%% Step 1: rotate w.r.t. the CURRENT radical direction (x direction)
+    %%% Step 1: rotate w.r.t. the CURRENT axial direction (x direction)
     rotm = rotx(rad2deg(phi)); % [NOTICE] rotx is in DEGREE
     ctCF = contact.refCF * rotm2tform(rotm);
     
@@ -76,11 +76,11 @@ function contact = calcContactPoint(link, crdCyl)
     tn = [0,1,0]*rho; % normal direction: y direction
     ctCF = ctCF * trvec2tform(tn);
     
-    %%% Step 3: translate in radical direction (x of contact CF)
+    %%% Step 3: translate in axial direction (x of contact CF)
     tr = [1,0,0]*z;
     ctCF = ctCF * trvec2tform(tr); % contact CF of the contact point
     
-    contact.r = ctCF(1:3,1); % radical (x of local CF) direction
+    contact.r = ctCF(1:3,1); % axial (x of local CF) direction
     contact.n = ctCF(1:3,2); % normal (y of local CF) direction
     contact.p = ctCF(1:3,4); % contact position, expressed in WCF
     

@@ -15,7 +15,7 @@ function link = updateLink(link, HT_this, HT_next, idx, lactv, crdCyl)
     
     R = HT_next(1:3,1:3); % NOTICE THAT USE THE NEXT_LINK AS ORIENTATION REFERENCE
     link.p = p_this;
-    link.r = R(:,1); % X direction is the radical direction
+    link.r = R(:,1); % X direction is the axial direction
     link.n = R(:,2); % Y direction is the normal direction (pointing palm)
     link.L = norm(p_next-p_this); % constant
     

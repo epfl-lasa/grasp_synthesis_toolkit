@@ -24,7 +24,6 @@ function finger = calcSymbolicLinkTransformation(finger)
     symbolic.DHpars = sym(finger.DHpars); % symbolic form
     symbolic.DHpars(:,3) = [q(1), q(2), q(3), q(4)]; % create a list of symbolic variables for joint angles
     
-    
     %%% [Allegro Hand DH Offset in JOINT ANGLE VARIABLES]
     if strcmp(finger.hand_type, "AllegroHandLeft")
         dh_offset_allegro_left = sym([0, 0, 0, 0;...
@@ -42,7 +41,6 @@ function finger = calcSymbolicLinkTransformation(finger)
         dh_offset_allegro_right = dh_offset_allegro_right(:,[4,1,2,3]);
         symbolic.DHpars(:,3) = symbolic.DHpars(:,3) + dh_offset_allegro_right(:,finger.idx);
     end
-    
     
     symbolic.joints_pos = sym(zeros(3,finger.n+1)); % (3,nl+1) save symbolic expression of finger joints Cartesian positions
     referenceJoint = symbolic.base; % should be a [4,4] matrix
@@ -71,11 +69,20 @@ function finger = calcSymbolicLinkTransformation(finger)
             refJoint_old = referenceJoint; % referenceJoint is not updated
         end
 
+        refCF = referenceJoint;
+        if strcmp(finger.hand_type, 'AllegroHandLeft') && (finger.idx == 1) && (finger.Link{l}.idx == 2)
+            local_mtx = [0,1,0,0;...
+                -1,0,0,0;...
+                0,0,1,0;...
+                0,0,0,1];
+            refCF = refCF*local_mtx; % F1L2 of Allegro hand left takes -y as axial direction and +x as normal direction.
+        end
+
         localTransf_test = sym([1,0,0,-L;...
             0,1,0,0;...
             0,0,1,0;...
             0,0,0,1]);
-        refCF = referenceJoint * localTransf_test; % refer to 'calcContactPoint'
+        refCF = refCF * localTransf_test; % refer to 'calcContactPoint'
 
         HTcp = refCF * HTr2cp; % (contact point), set base as the reference point of the link % contact point: HTcp(1:3,4)
         HTlc = refCF * HTr2lc; % (link center), at the same height as the contact point in local frame, but at the central axis of link
@@ -97,7 +104,7 @@ function finger = calcSymbolicLinkTransformation(finger)
         finger.Link{l}.contact.symbolic.HTlc = HTlc; % from finger base to link center
 
         % Notice that this is contact p r n, different from link p r n
-        finger.Link{l}.contact.symbolic.r = HTcp(1:3,1); % radical (x of local CF) direction on the contact
+        finger.Link{l}.contact.symbolic.r = HTcp(1:3,1); % axial (x of local CF) direction on the contact
         finger.Link{l}.contact.symbolic.n = HTcp(1:3,2); % normal (y of local CF) direction
         finger.Link{l}.contact.symbolic.p = HTcp(1:3,4); % contact position, expressed in WCF, this is used to construct 'hand.symbolic.Cp'
 
