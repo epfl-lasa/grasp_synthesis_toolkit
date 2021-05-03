@@ -179,7 +179,9 @@ function [c, c_grad, param, ht_c, ht_c_grad] = cylNonLinIneqConst(hand, param)
 
                 for k = 1:numel(coll) % link k collides with current link
                     [k_f,k_l] = deal(coll{k}(1),coll{k}(2));
-
+                    if k_f == 0
+                        continue; % [TODO] implement collision between finger and palm!
+                    end
                     if k_f == idx_f % skip link on the same finger
                         continue;
                     end

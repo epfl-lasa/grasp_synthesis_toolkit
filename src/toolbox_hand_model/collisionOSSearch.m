@@ -74,8 +74,10 @@ for i = 1:N % this link, link_i
     end
     
     k_i = boundary(rmap_i);
-    rmap_i = [rmap_i(k_i(:,1),1), rmap_i(k_i(:,2),2), rmap_i(k_i(:,3),3)];
-    rmap_i = unique(rmap_i,'rows');
+    if ~isempty(k_i)
+        rmap_i = [rmap_i(k_i(:,1),1), rmap_i(k_i(:,2),2), rmap_i(k_i(:,3),3)];
+        rmap_i = unique(rmap_i,'rows');
+    end
     clear k_i;
     
     link_j_list = {}; % information of all link_j that collide with link_i
@@ -86,8 +88,10 @@ for i = 1:N % this link, link_i
         % Extract data points on the boundary surface of the rmaps to
         % accelerate computation
         k_j = boundary(rmap_j);
-        rmap_j = [rmap_j(k_j(:,1),1), rmap_j(k_j(:,2),2), rmap_j(k_j(:,3),3)];
-        rmap_j = unique(rmap_j,'rows');
+        if ~isempty(k_j)
+            rmap_j = [rmap_j(k_j(:,1),1), rmap_j(k_j(:,2),2), rmap_j(k_j(:,3),3)];
+            rmap_j = unique(rmap_j,'rows');
+        end
         clear k_j;   
         % Notice that consequtive links cannot be skipped. Could overlap in
         % grasping planning.

@@ -29,7 +29,7 @@ else
     fprintf('\n[1] Hand model loaded.\n');
 end
 %% Create Object Models
-type = 'comp'
+type = 'cyl'
 switch type
     case 'cyl'
         Param.radius = 14;
