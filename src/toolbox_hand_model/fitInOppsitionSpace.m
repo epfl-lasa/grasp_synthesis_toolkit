@@ -50,7 +50,7 @@ end
 %% Step 2: find pairs of joint rmaps that fit the object model
 OS = {}; % (1,nos), each cell contains information of one feasible opposition spaces, and save the corresponding opposition spaces, composing of two link rmaps
 
-nm = numel(link_dict); % number of meshgrid (#link*#fingers+palm)
+nm = numel(link_dict); % number of mesh grid (#link*#fingers+palm)
 cmap = distinguishable_colors(nm);
 
 fprintf('[fitInOppsitionSpace] Object radius: %d\n', object.radius);
@@ -59,7 +59,7 @@ fprintf('[fitInOppsitionSpace] Object radius: %d\n', object.radius);
 const = load('problem_config.mat','f_mu'); % load constant values from config files
 d = 2 * object.radius * cos(atan(const.f_mu)); % consider the influence of friction cone
 
-existence_heatmap = zeros(nm); % construct a heatmap to indicate the existance of opposition space between finger links
+existence_heatmap = zeros(nm); % construct a heatmap to indicate the existence of opposition space between finger links
 
 for i = 1:nm
     % Iterate over all rmaps, rmap_i
@@ -67,8 +67,17 @@ for i = 1:nm
     info_i = link_dict{i}.info; % (1,2)
     
     % Notice that Thumb 2nd link belongs to palm
-    if size(rmap_i,1) == 1 % Skip virtual (singular) link (link length is 0)
+    if (~strcmp(category_list{i},'P')) && size(rmap_i,1) == 1 % Skip virtual (singular) link (link length is 0)
         continue;
+    end
+
+    if all(info_i) % Simplify link mesh only for non-palm links
+        k_i = boundary(rmap_i);
+        if numel(k_i) % k_i~=0, the convhull is not degenerated (palm is degenerated)
+            rmap_i = [rmap_i(k_i(:,1),1), rmap_i(k_i(:,2),2), rmap_i(k_i(:,3),3)];
+            rmap_i = unique(rmap_i,'rows');
+            clear k_i;
+        end
     end
 
     for j = i+1:nm
@@ -77,19 +86,14 @@ for i = 1:nm
         rmap_j = link_dict{j}.mesh;
         info_j = link_dict{j}.info; % (1,2)
         
-        % Extract data points on the boundary sruface of the rmaps
-        k_i = boundary(rmap_i);
-        if numel(k_i) % k_i~=0, the convhull is not degenerated (palm is degenerated)
-            rmap_i = [rmap_i(k_i(:,1),1), rmap_i(k_i(:,2),2), rmap_i(k_i(:,3),3)];
-            rmap_i = unique(rmap_i,'rows');
-            clear k_i;
-        end
-        
-        k_j = boundary(rmap_j);
-        if numel(k_j) % k_j~=0, the convhull is not degenerated (palm is degenerated)
-            rmap_j = [rmap_j(k_j(:,1),1), rmap_j(k_j(:,2),2), rmap_j(k_j(:,3),3)];
-            rmap_j = unique(rmap_j,'rows');
-            clear k_j;
+        % Extract data points on the boundary surface of the rmaps
+        if all(info_j)
+            k_j = boundary(rmap_j);
+            if numel(k_j) % k_j~=0, the convhull is not degenerated (palm is degenerated)
+                rmap_j = [rmap_j(k_j(:,1),1), rmap_j(k_j(:,2),2), rmap_j(k_j(:,3),3)];
+                rmap_j = unique(rmap_j,'rows');
+                clear k_j;
+            end
         end
         
         dist = pdist2(rmap_i, rmap_j, 'euclidean'); % taken elements as (1,N), point-wise distance
