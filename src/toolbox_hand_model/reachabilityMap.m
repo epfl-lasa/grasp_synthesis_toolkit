@@ -129,6 +129,11 @@ function [map_hand, robot] = reachabilityMap(robot, fngrs2spl, if_plot, if_save)
             try % in case dataset degenerates and convex hull does not exist
                 [k,~] = boundary(linkmesh); % Use boundary, not convex hull. Set last input to 0 to use convex hull. default: 0.5
                 [k_ch,~] = convhulln(linkmesh); % Use convex hull
+                
+                assert(size(linkmesh,2)==3);
+                linkmesh = [linkmesh(k(:,1),1), linkmesh(k(:,2),2), linkmesh(k(:,3),3)];
+                linkmesh = unique(linkmesh, 'rows');
+
             catch % k or k_ch is empty
                 if size(linkmesh,1) > 2 % a 2d plane exists in 3d space
                     [linkmesh,k,k_ch] = mesh2DPlane(linkmesh); % generate meshgrid for degenerated plane

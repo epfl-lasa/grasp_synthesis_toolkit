@@ -25,9 +25,9 @@ function finger = addLinkToFinger(finger, update_link)
         % of the link; 'HT_this' is not affected by the rotation; while
         % 'HT_next' is affected by the rotation of the link.
         if update_link
-            finger.Link{k} = updateLink(finger.Link{k}, refJoint_old, referenceJoint, k, finger.contacted_link(k));
+            finger.Link{k} = updateLink(finger.Link{k}, refJoint_old, referenceJoint, finger.contacted_link(k));
         else
-            finger.Link{k} = makeLink(refJoint_old, referenceJoint, k, finger.contacted_link(k), finger.cc); % set base as the reference point of the link
+            finger.Link{k} = makeLink(finger,refJoint_old, referenceJoint, k); % set base as the reference point of the link
             finger.idx_real_link(end+1) = finger.Link{k}.is_real;
         end
     end
@@ -37,9 +37,9 @@ function finger = addLinkToFinger(finger, update_link)
     finger.joints_pos(:,end) = referenceJoint(1:3,4);
     
     if update_link % The last link, use the same HT_this and HT_next
-        finger.Link{k+1} = updateLink(finger.Link{k+1}, referenceJoint, referenceJoint, k+1, finger.contacted_link(k+1));
+        finger.Link{k+1} = updateLink(finger.Link{k+1}, referenceJoint, referenceJoint, finger.contacted_link(k+1));
     else        
-        finger.Link{k+1} = makeLink(referenceJoint, referenceJoint, k+1, finger.contacted_link(k+1), finger.cc); % fingertip as the last link (virtual link with 0 length)
+        finger.Link{k+1} = makeLink(finger,referenceJoint, referenceJoint, k+1); % fingertip as the last link (virtual link with 0 length)
         finger.idx_real_link(end+1) = finger.Link{k+1}.is_real;
     end
 end

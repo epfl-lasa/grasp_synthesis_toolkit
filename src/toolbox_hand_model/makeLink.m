@@ -1,4 +1,4 @@
-function link = makeLink(HT_this, HT_next, idx, lactv, crdCyl)
+function link = makeLink(finger,HT_this, HT_next, idx, lactv, crdCyl)
 % Make the link, represented by the homogeneous transformation of the link base and the link tip (base of the next link).
 % Input:
 %     * HT_this: homogeneous transformation matrix from the base of finger to the base of the digit link
@@ -15,13 +15,21 @@ function link = makeLink(HT_this, HT_next, idx, lactv, crdCyl)
 %       * link.r: radical direction vector of the link (pointing from the base to the next base)
 %       * link.L: length of the link
 
-    if nargin < 4
-        lactv = true; % if this link is in contact (1), and if so, update the contact point
+    if nargin < 6
+        crdCyl = finger.cc; % cyl coord of the finger
     end
-    if nargin < 3 % index of this link in the father finger
+    if nargin < 5 % index of this link in the father finger
+        if isfield(finger, 'contacted_link')
+            lactv = finger.contacted_link(idx);
+        else
+            warning('Finger contacted_link information missing.');
+            lactv = true; % if this link is in contact (1), and if so, update the contact point
+        end
+    end
+    if nargin < 4 % index of this link in the father finger
         idx = 0;
     end
-    if nargin < 2 % create a virtual link
+    if nargin < 3 % create a virtual link
         HT_next = HT_this; % in case requested to plot the point on the joint
     end
     
@@ -34,6 +42,8 @@ function link = makeLink(HT_this, HT_next, idx, lactv, crdCyl)
             'HT_this', HT_this,...
             'HT_next', HT_next,... % homogeneous transform matrix from finger base to link base
             'lactv', lactv,... % link active. If this link is active, the contact point on this link is enabled
+            'hand_type',finger.hand_type,...
+            'finger_idx',finger.idx,...
             'symbolic', []); % symbolic expression of link points
     
     R = HT_next(1:3,1:3); % NOTICE THAT USE THE NEXT_LINK AS ORIENTATION REFERENCE
@@ -60,5 +70,8 @@ function link = makeLink(HT_this, HT_next, idx, lactv, crdCyl)
         link.is_real = false;
         link.contact = []; % empty, indicates that contact here is not possible
         link.geo_mesh = []; % empty, indicates that geo_mesh here is not possible
+    end
+    if strcmp(link.hand_type, 'AllegroHandLeft') && (link.finger_idx == 1) && (link.idx == 1) % F1L1 is real link, but cannot be used. So set as false.
+        link.is_real = false;
     end
 end

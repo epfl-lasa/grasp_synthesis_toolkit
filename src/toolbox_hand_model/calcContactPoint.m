@@ -63,6 +63,14 @@ function contact = calcContactPoint(link, crdCyl)
     %%% should be fixed w.r.t. the link.
     
     refCF = link.HT_next;
+    % This is an inherent issue of Allegro hand left DH parameters. Temporary solution.
+    if strcmp(link.hand_type, 'AllegroHandLeft') && (link.finger_idx == 1) && (link.idx == 2) % If this link is the 2nd link of the 1st finger
+        local_mtx = [0,1,0,0;...
+            -1,0,0,0;...
+            0,0,1,0;...
+            0,0,0,1];
+        refCF = refCF*local_mtx; % F1L2 of Allegro hand left takes -y as axial direction and +x as radical direction.
+    end    
     tr = [1,0,0]*(-link.L);
     localTransf_test = trvec2tform(tr);
     contact.refCF = refCF*localTransf_test; % reference CF USED TO CALCULATE the contact point (see above explanation)

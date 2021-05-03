@@ -80,12 +80,16 @@ for i = 1:nm
         % Extract data points on the boundary sruface of the rmaps
         k_i = boundary(rmap_i);
         if numel(k_i) % k_i~=0, the convhull is not degenerated (palm is degenerated)
-            rmap_i = rmap_i(k_i,:);
+            rmap_i = [rmap_i(k_i(:,1),1), rmap_i(k_i(:,2),2), rmap_i(k_i(:,3),3)];
+            rmap_i = unique(rmap_i,'rows');
+            clear k_i;
         end
         
         k_j = boundary(rmap_j);
         if numel(k_j) % k_j~=0, the convhull is not degenerated (palm is degenerated)
-            rmap_j = rmap_j(k_j,:);
+            rmap_j = [rmap_j(k_j(:,1),1), rmap_j(k_j(:,2),2), rmap_j(k_j(:,3),3)];
+            rmap_j = unique(rmap_j,'rows');
+            clear k_j;
         end
         
         dist = pdist2(rmap_i, rmap_j, 'euclidean'); % taken elements as (1,N), point-wise distance
