@@ -72,11 +72,20 @@ function finger = calcSymbolicLinkTransformation(finger)
             refJoint_old = referenceJoint; % referenceJoint is not updated
         end
 
+
+        refCF = referenceJoint;
+        if strcmp(finger.hand_type, 'AllegroHandLeft') && (finger.idx == 1) && (finger.Link{l}.idx == 2)
+            local_mtx = [   0,1,0,0;...
+                            -1,0,0,0;...
+                            0,0,1,0;...
+                            0,0,0,1];
+            refCF = refCF*local_mtx; % F1L2 of Allegro hand takes -y as axial direction and +x as radial direction
+        end
         localTransf_test = sym([1,0,0,-L;...
             0,1,0,0;...
             0,0,1,0;...
             0,0,0,1]);
-        refCF = referenceJoint * localTransf_test; % refer to 'calcContactPoint'
+        refCF = refCF *localTransf_test; % refer to 'calcContactPoint'
 
         HTcp = refCF * HTr2cp; % (contact point), set base as the reference point of the link % contact point: HTcp(1:3,4)
         HTlc = refCF * HTr2lc; % (link center), at the same height as the contact point in local frame, but at the central axis of link

@@ -6,13 +6,13 @@ setup_path;
 setup_problem_config;
 
 %% Configuration of experiment
-recon.hand_model = false; % reconstruct hand models
+recon.hand_model = true; % reconstruct hand models [TODO] remove this after changes applied
 recon.object_model = true; % reconstruct object models
 recon.rmap = false; % reconstruct reachability maps
 recon.os = true; % reconstruct opposition space
 
 %% Create Hand Models
-if recon.hand_model || ~exist('hand','var')
+if recon.hand_model && ~exist('hand','var')
     disp('Generating hand model...');
     Th = eye(4);
     Th(1:3,4) = [0;0;0];
@@ -45,8 +45,8 @@ switch type
         mySGplotHand(hand);
         plotCylinder(object,false);
     case 'comp'
-        Param.radius = 12;
-        Param.height = 20;
+        Param.radius = 15;
+        Param.height = 30;
         Param.roll = 0;
         Param.pitch = -pi/2;
         Param.yaw = 0;
@@ -54,8 +54,8 @@ switch type
         Param.quat = quaternion([Param.yaw,Param.pitch,Param.roll],'euler', 'ZYX','frame');
         Param.transl = [0;0;-100]; % translation
         
-        Param.sphereCenter = [0,0,20;15,0,20;-15,0,20];
-        Param.sphereRadius = [12,12,12];
+        Param.sphereCenter = [0,0,25;0,0,-25];
+        Param.sphereRadius = [20,20];
         object = compObj(Param);
         mySGplotHand(hand);
         plotCompObject(object,false);
@@ -80,7 +80,7 @@ end
 % comprises the ad-/abduction degrees of freedom on the bottom of the finger.
 % The last link is used to model another virtual link at finger tip for convenience.
 
-osList = {{[1,4],[2,4]}};%,...
+osList = {{[2,3],[3,3]}};%,...
 % successful simulations achieved for:
 % {[0,0],[2,4]} % radius: 10, height: 30
 % {[0,0],[3,4]} % radius: 18, height: 30
