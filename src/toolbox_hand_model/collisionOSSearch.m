@@ -95,7 +95,7 @@ for i = 1:N % this link, link_i
             end
         end
         
-        % Notice that consequtive links cannot be skipped. Could overlap in
+        % Notice that consecutive links cannot be skipped. Could overlap in
         % grasping planning.
         dist = pdist2(rmap_i, rmap_j, 'euclidean');
         min_dist = min(dist(:));

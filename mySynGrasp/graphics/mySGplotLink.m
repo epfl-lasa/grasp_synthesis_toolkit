@@ -1,11 +1,11 @@
 %    SGplotLink - Plot a link of the hand structure
 %
-%    The function plots a clindrical link of the hand structure
+%    The function plots a cylindrical link of the hand structure
 %
 %    Usage: h = SGplotLink(p1,p2,r)
 %
 %    Arguments:
-%    p1 = the intial point of the link
+%    p1 = the initial point of the link
 %    p2 = the final point of the link
 %    r = the radius of the link
 %    transp = parameter representing surface transparency
@@ -60,11 +60,11 @@ if nargin < 3
 end
     
     % link length
-    l = norm(p2-p1)-r; % r = the radius of the link % minues r: plot cylinder in between, but use semispheres on both ends
+    l = norm(p2-p1)-r; % r = the radius of the link % minus r: plot cylinder in between, but use semi-spheres on both ends
     vers = (p2-p1)/norm(p1-p2);
     p3 = p1+vers*(l);
 
-    % cilinder of radius r
+    % cylinder of radius r
     [xc,yc,zc]= cylinder(r,20);
 
     zc = l*zc;
@@ -118,7 +118,7 @@ end
         end
     end
 
-    % Step 2: surf the semisphere on the fingertips
+    % Step 2: surf the semi sphere on the fingertips
     if if_plot
         h = surf(xst,yst,zst,'FaceColor',fcl,'FaceAlpha',transp,'EdgeColor',ecl);
         alpha(h,transp);

@@ -151,7 +151,7 @@ function visualizeOptimizationConfig(hand, object_list, X_sol, param, fig_title,
 
                     % Notice that torsional torque can has different directions
                     %{
-                    TC_t_i = contact.symbolic.TC_torsinal; % torsional torque component
+                    TC_t_i = contact.symbolic.TC_torsional; % torsional torque component
                     TC_t_i = subs(TC_t_i, {rho_i,'L'}, {link.radius,link.L});
                     key = ismember(X_key, symvar(TC_t_i));
                     TC_t_i = double(subs(TC_t_i, X_key(key), X_sol(key)));

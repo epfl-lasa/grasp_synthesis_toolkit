@@ -148,8 +148,8 @@ function finger = calcSymbolicLinkTransformation(finger)
 
         vn_i = -d; % (3,1) % from contact point, pointing towards object center
         vn_i = vn_i./sqrt(ones(1,3)*(vn_i.*vn_i)); % vectorized form of normalization, equivalent to: vn_i = vn_i./norm(vn_i);
-        TC_torsinal = f_gamma*vn_i; % Torsional torque (soft finger)
-        finger.Link{l}.contact.symbolic.TC_torsinal = TC_torsinal; % [ L, alp, phi, q1...4, rho, x, y, z]
+        TC_torsional = f_gamma*vn_i; % Torsional torque (soft finger)
+        finger.Link{l}.contact.symbolic.TC_torsional = TC_torsional; % [ L, alp, phi, q1...4, rho, x, y, z]
     end
 
     symbolic.tip = referenceJoint;

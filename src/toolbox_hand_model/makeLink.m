@@ -5,7 +5,7 @@ function link = makeLink(finger, HT_this, HT_next, idx, lactv, crdCyl)
 %     * HT_next: homogeneous transformation matrix from the base of finger
 %     to the end of the digit link
 %     * lactv: if the link is active (in contact)
-%     * crdCyl: cylindrival parameters of the contact point, [rho, phi, alp]
+%     * crdCyl: cylindrical parameters of the contact point, [rho, phi, alp]
 %     % * type: type of the reference point: 'center' or 'base'
 %     * idx: index to indicate which link it is in the finger
 % Output: 
@@ -58,7 +58,7 @@ function link = makeLink(finger, HT_this, HT_next, idx, lactv, crdCyl)
         epsilon = param.epsilon; % numerical round-off error tolerance
     end
     
-    if norm(dot(link.r, link.n))>epsilon % inner product is not close to zero, two vecters are not perpendicular % Notice that cannot use 0 in judgement here.
+    if norm(dot(link.r, link.n))>epsilon % inner product is not close to zero, two vectors are not perpendicular % Notice that cannot use 0 in judgment here.
         error(['Vectors are not perpendicular. Link idx: ', num2str(idx), ' dot product: ', num2str(dot(link.r, link.n))]);
     end
     

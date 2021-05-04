@@ -173,8 +173,8 @@ P.contact.symbolic.TC = TC;
 
 vn_i = -d; % (3,1) % from contact point, pointing towards object center
 vn_i = vn_i./sqrt(ones(1,3)*(vn_i.*vn_i)); % vectorized form of normalization, equivalent to: vn_i = vn_i./norm(vn_i);
-TC_torsinal = f_gamma*vn_i; % Torsional torque (soft finger)
-P.contact.symbolic.TC_torsinal = TC_torsinal;
+TC_torsional = f_gamma*vn_i; % Torsional torque (soft finger)
+P.contact.symbolic.TC_torsional = TC_torsional;
 
 % points used for mesh grid sampling
 P.basepoints_h = basepoints_h;
