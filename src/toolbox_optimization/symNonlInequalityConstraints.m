@@ -14,6 +14,12 @@ function [c, c_grad, param, ht_c, ht_c_grad] = symNonlInequalityConstraints(hand
     c = sym([]); % to save the symbolic form
     c_idx = []; % to save idx of different constraints
     c_name = {};
+
+    %%% fields of palm
+    points_inr = hand.P.points_inr; % (N,3) vertices of palm shape
+    pInr = mean(points_inr, 1); % center point on the palm surface
+    assert(isequal(size(pInr),[1,3]));
+    palm_normal = hand.P.contact.symbolic.n(:); % normal direction
     
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     % Inequality Constraint 1: Collision Avoidance
@@ -77,17 +83,12 @@ function [c, c_grad, param, ht_c, ht_c_grad] = symNonlInequalityConstraints(hand
     
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     % Inequality Constraint 3: Collision Avoidance
-    % Collision between object and palm (finger bases)
+    % Collision between object and palm (palm inner surface)
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     fprintf('* Collision avoidance (object vs. palm): ');
+    dist2palm = dot(palm_normal, oc(:)-pInr(:)); % Notice that this is a signed distance. dist>0, cntr lies on the inner side of palm. 
     
-    x1 = hand.F{1}.symbolic.base(1:3,4);
-    x2 = hand.F{end}.symbolic.base(1:3,4);
-    % Line x1-x2 is the 'finger base line' that connects all finger bases
-    % This detection is realized by calculating the distance between object
-    % center and the finger base line
-    dist = norm(cross(oc-x1,oc-x2))/norm(x2-x1);
-    c(end+1) = link_r + obj_r - dist;
+    c(end+1 : end+numel(dist2palm)) = obj_r - dist2palm; % dist to palm surface, no need to consider palm thickness 
     
     c_idx(end+1) = numel(c)-sum(c_idx);
     c_name{end+1} = 'Collision avoidance (object vs. palm)';
@@ -110,10 +111,6 @@ function [c, c_grad, param, ht_c, ht_c_grad] = symNonlInequalityConstraints(hand
                 fprintf('\nThe palm does not have collision list.\n');
                 continue;
             end
-            points_inr = hand.P.points_inr; % (N,3) vertices of palm shape
-            pInr = mean(points_inr, 1); % center point on the palm surface
-            assert(isequal(size(pInr),[1,3]));
-            palm_normal = hand.P.contact.symbolic.n(:); % normal direction
             
             for k = 1:numel(coll) % link `k` collides with palm
                 [k_f,k_l] = deal(coll{k}(1),coll{k}(2));
@@ -220,10 +217,6 @@ function [c, c_grad, param, ht_c, ht_c_grad] = symNonlInequalityConstraints(hand
                                 c(end+1 : end+numel(dist)) = 2*link_r - dist;
                             end
                         else % This is palm
-                            points_inr = hand.P.points_inr; % (N,3) vertices of palm shape
-                            pInr = mean(points_inr, 1); % center point on the palm surface
-                            assert(isequal(size(pInr),[1,3]));
-                            palm_normal = hand.P.contact.symbolic.n(:); % normal direction
                             dist2palm = sym(zeros(1,5));
                             for d = 0:(5-1)
                                 xi = x1 + (x2-x1)*d/(5-1);
