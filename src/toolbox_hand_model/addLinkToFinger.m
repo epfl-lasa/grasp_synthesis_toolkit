@@ -14,7 +14,7 @@ function finger = addLinkToFinger(finger, update_link)
     % Update kinematic chain of finger
     referenceJoint = finger.base; % 'referenceJoint' is a HT transform mtx. Starting from base coordinate frame
     for k = 1:finger.n % k: idx of link. iterate over number of joints on the finger
-        % Virtual link and joint number has 1-1 correspondance
+        % Virtual link and joint number has 1-1 correspondence
         refJoint_old = referenceJoint; % the old ref on the base
         localTransf = mySGDHMatrix(finger.DHpars(k,:));
         referenceJoint = referenceJoint*localTransf; % the new ref locates on the tip of the link

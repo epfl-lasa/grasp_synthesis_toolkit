@@ -1,7 +1,7 @@
 function hand = updateHandConfig(hand, soln)
 % Update hand configurations given chosen optimization result
 % 1. Move finger according to the joint positions given in X
-% 2. Set all affected joints (before contact point's link) to deactive
+% 2. Set all affected joints (before contact point's link) to deactivate
 % 
 % soln: a struct that contains all solution information
 %   - X_sol: solution variables
@@ -40,7 +40,7 @@ end
 
 hand = mySGmoveHand(hand,q);
 
-% Step 3: disablt the joints that are in contact
+% Step 3: disable the joints that are in contact
 % Notice that the joint active states of hand are used through the entire code
 
 for i = 1:ncp
@@ -49,7 +49,7 @@ end
 
 % disp('Nach dem Update'); disp(hand.qactv);
 
-% Step 4: substitude values of the deactivated joints in symbolic fields,
+% Step 4: substitute values of the deactivated joints in symbolic fields,
 % such as contact points 'Cp' and contact normal 'Cn', using the
 % corresponding values in X_sol. Indexing via X_key.
 disp('  Updating symbolic expressions...');

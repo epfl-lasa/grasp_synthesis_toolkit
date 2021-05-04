@@ -154,7 +154,7 @@ norm_vtx = bsxfun(@minus, points_inr, ctr_inr(:).'); % (N,3), normalized vertice
 % P.pvec_lb = min(norm_vtx,[],1);
 
 %%% calculate the upper bound and lower bound of pvec. noticed that pvec is
-%%% defined in the palm inner surface reference frame insead of world
+%%% defined in the palm inner surface reference frame instead of world
 %%% reference frame, so vx along the short axis, vy the longer one
 
 norm_vtx_palm = transpose(palm_base(1:3,1:3) * norm_vtx.'); % represent the bounds limits from world coordinate frame to local palm CF to match the definition of p = [vx,vy]
@@ -173,10 +173,10 @@ P.contact.symbolic.TC = TC;
 
 vn_i = -d; % (3,1) % from contact point, pointing towards object center
 vn_i = vn_i./sqrt(ones(1,3)*(vn_i.*vn_i)); % vectorized form of normalization, equivalent to: vn_i = vn_i./norm(vn_i);
-TC_torsinal = f_gamma*vn_i; % Torsinal torque (soft finger)
+TC_torsinal = f_gamma*vn_i; % Torsional torque (soft finger)
 P.contact.symbolic.TC_torsinal = TC_torsinal;
 
-% points used for meshgrid sampling
+% points used for mesh grid sampling
 P.basepoints_h = basepoints_h;
 P.HT2inr = HTctr2inr; % plotCoordinateFrame(HT,'r',10)
 P.contact.symbolic.HTcp = HTcp; % from world CF to contact CF

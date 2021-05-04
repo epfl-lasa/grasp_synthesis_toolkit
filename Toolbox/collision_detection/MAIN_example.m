@@ -17,7 +17,7 @@ iterationsAllowed = 6;
 fig = figure;
 hold on
 
-% Load sample vertex and face data for two convex polyhedra
+% Load sample vertex and face data for two convex polyhedron
 SampleShapeData;
 
 % Make shape 1
@@ -47,7 +47,7 @@ S2Coords = S2Obj.Vertices;
 
 S1Rot = eye(3,3); % Accumulate angle changes
 
-% Make a random rotation matix to rotate shape 1 by every step
+% Make a random rotation matrix to rotate shape 1 by every step
 S1Angs = 0.1*rand(3,1); % Euler angles
 sang1 = sin(S1Angs);
 cang1 = cos(S1Angs);
@@ -61,7 +61,7 @@ S1RotDiff = ...
 
 S2Rot = eye(3,3);
 
-% Make a random rotation matix to rotate shape 2 by every step
+% Make a random rotation matrix to rotate shape 2 by every step
 S2Angs = 0.1*rand(3,1); % Euler angles
 sang2 = sin(S2Angs);
 cang2 = cos(S2Angs);

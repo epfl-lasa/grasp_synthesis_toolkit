@@ -225,7 +225,7 @@ param.grasped_objects = grasped_objects; % list of grasped objects
 param.ncp = ncp; % number of contacts
 param.k = k; % number of edges of friction cone
 param.f_mu = f_mu; % coefficient of friction
-param.f_gamma = f_gamma; % coefficient of torsinal friction
+param.f_gamma = f_gamma; % coefficient of torsional friction
 
 param.idx_oc = idx_oc; % index of object center in X
 param.idx_q = idx_q; % index of active joint angles q in X 

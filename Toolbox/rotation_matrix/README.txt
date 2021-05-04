@@ -1,16 +1,16 @@
-The class RotationMatrix allows to handle a 3D rotation matrix with different parametrizations: 
+The class RotationMatrix allows to handle a 3D rotation matrix with different parametrization: 
 - a [3x3] rotation matrix 
 - Euler angles 
 - exponential map 
 - quaternions 
-Once a RotationMatrix instance has been created from one of the parametrizations above, 
-all the parametrizations can be obtained interchangeably.
+Once a RotationMatrix instance has been created from one of the parametrization above, 
+all the parametrization can be obtained interchangeably.
 
 Additional static methods allow to convert a parametrization into another one without creating instances.
 
 Examples:
 
-% create a RotationMatrix from different parametrizations 
+% create a RotationMatrix from different parametrization 
 
 r = RotationMatrix(rand([3,1]), 'exponentialMap');
 r = RotationMatrix(eye(3), 'rotationMatrix');

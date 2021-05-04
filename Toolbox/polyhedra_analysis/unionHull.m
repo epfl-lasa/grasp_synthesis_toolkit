@@ -85,7 +85,7 @@ function U = unionHull(varargin)
 %   
 %EXAMPLE 2: The unit cube is formed as the union of a simplex, a square,
 %and a single 3D point. The simplex and square are both represented using
-%equalites and inequalities. For convenience, we use the addBounds() utility
+%equalities and inequalities. For convenience, we use the addBounds() utility
 %to compose the in/equality matrices. The representation of the square illustrates
 %the use of the 'qlcon' label, when a known interior point is available.
 % 

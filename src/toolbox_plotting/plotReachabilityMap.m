@@ -72,7 +72,7 @@ for f = 1:nf
                 map_dataset = map_link.linkmesh;
 
                 %{
-                % Add gaussian noise to avoid singularity in convexhull
+                % Add Gaussian noise to avoid singularity in convexhull
                 noise_sigma = 1;
                 noise_mu = 0;
                 noise = dataset + sqrt(noise_sigma)*randn(size(dataset)) + noise_mu;

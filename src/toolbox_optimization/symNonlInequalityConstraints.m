@@ -25,11 +25,9 @@ function [c, c_grad, param, ht_c, ht_c_grad] = symNonlInequalityConstraints(hand
     % formulated as nonl equality constraint.
     fprintf('* Collision avoidance (object vs. links): ');
     for i = 1:ncp
-        if ~all(os_info{i})
-            % collision with palm is guaranteed in 'Collision avoidance (object vs. palm)' 
-            continue;
-        else
-            [idx_f, idx_l] = deal(os_info{i}(1),os_info{i}(2)); % index of finger and link
+        [idx_f, idx_l] = deal(os_info{i}(1),os_info{i}(2)); % index of finger and link
+        if all([idx_f, idx_l])
+            % Collision with palm is guaranteed in 'Collision avoidance (object vs. palm)'
             finger = hand.F{idx_f};
             nq_pre = min([idx_l, finger.n]); % number of joints ahead of idx_lnk, in case idx_lnk > finger.n (possible for fingertip link)
             for j = 1:nq_pre % Iterate over all links, including link in contact ('idx_l')
@@ -78,7 +76,7 @@ function [c, c_grad, param, ht_c, ht_c_grad] = symNonlInequalityConstraints(hand
     fprintf('%d\n', c_idx(end));
     
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    % Inequality Constraint 4: Collision Avoidance
+    % Inequality Constraint 3: Collision Avoidance
     % Collision between object and palm (finger bases)
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     fprintf('* Collision avoidance (object vs. palm): ');
@@ -96,16 +94,79 @@ function [c, c_grad, param, ht_c, ht_c_grad] = symNonlInequalityConstraints(hand
     fprintf('%d\n', c_idx(end));
 
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    % Inequality Constraint 3: Collision Avoidance
+    % Inequality Constraint 4: Collision Avoidance
     % Collision between current link and links from other fingers
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     fprintf('* Collision avoidance (this link vs. other links): ');
     all_collision_pairs = {};
     for i = 1:ncp
-        if ~all(os_info{i})
-            continue; % palm does not move, will not collide with other fingers
+        [idx_f,idx_l] = deal(os_info{i}(1),os_info{i}(2)); % index of finger and link in the finger
+
+        %%% This link is palm. Calculate collision between palm and links in its collision list.
+        if ~all([idx_f,idx_l])
+            try
+                coll = hand.P.collList;
+            catch
+                fprintf('\nThe palm does not have collision list.\n');
+                continue;
+            end
+            points_inr = hand.P.points_inr; % (N,3) vertices of palm shape
+            pInr = mean(points_inr, 1); % center point on the palm surface
+            assert(isequal(size(pInr),[1,3]));
+            palm_normal = hand.P.contact.symbolic.n(:); % normal direction
+            
+            for k = 1:numel(coll) % link `k` collides with palm
+                [k_f,k_l] = deal(coll{k}(1),coll{k}(2));
+                
+                % Check if current collision pair has already been detected previously
+                already_exist = false; % if the current pair of collision already exists in the collision pair
+                if ~isempty(all_collision_pairs)
+                    for p = 1:numel(all_collision_pairs)
+                        temp_pair = all_collision_pairs{p}; % should be [2*2]: [finger_1, link_1; finger_2, link_2]
+                        if ismember([idx_f,idx_l],temp_pair,'rows') && ismember([k_f,k_l],temp_pair,'rows')
+                            already_exist = true;
+                            break;
+                        end   
+                    end
+                end
+                
+                if already_exist % if this distance has not been calculated before
+                    continue;
+                else
+                    %%% Palm-Link Collision
+                    if all([k_f,k_l])
+                        link_k = hand.F{k_f}.Link{k_l}; % link to collide with current link
+                        if ~link_k.is_real
+                            continue; % Skip virtual links
+                        end
+                        
+                        x1 = link_k.symbolic.HT_this(1:3,4); % end points of collided link
+                        x2 = link_k.symbolic.HT_next(1:3,4);
+
+                        dist2palm = sym(zeros(1,5));
+                        for d = 0:(5-1)
+                            xi = x1 + (x2-x1)*d/(5-1);
+                            dist2palm(d+1) = dot(palm_normal,xi-pInr(:));
+                        end
+
+                        symvars = symvar(dist2palm);
+                        subKeys = symvars(~ismember(symvars,X_key)); % symvars that belong to dict_q but not X_key, need to be substituted
+                        if ~isempty(subKeys)
+                            subValues = hand.q(ismember(dict_q,subKeys)); % subs them using hand default joint angle values
+                            dist2palm = subs(dist2palm, subKeys, subValues.');
+                        end
+                        c(end+1 : end+numel(dist2palm)) = link_k.radius - dist2palm;
+                        
+                        detected_set{end+1} = [idx_f,idx_l; k_f,k_l]; % Add current collision pair to the detected list
+                    %%% Palm-Palm Collision
+                    else
+                        error('Error: palm exists in the collision list of palm.');    
+                    end 
+                end
+            end
+
+        %%% This link is normal finger link. Calculate collision between this link and links in its collision list.
         else
-            [idx_f,idx_l] = deal(os_info{i}(1),os_info{i}(2)); % index of finger and link in the finger
             finger = hand.F{idx_f};
             nq_pre = min([idx_l, finger.nlink-1]); % number of joints ahead of idx_lnk, in case idx_lnk > finger.n (possible for fingertip link). max(finger.n) = 4
 
@@ -124,13 +185,7 @@ function [c, c_grad, param, ht_c, ht_c_grad] = symNonlInequalityConstraints(hand
                     if k_f == idx_f % skip link on the same finger
                         continue;
                     end
-
-                    link_coll = hand.F{k_f}.Link{k_l}; % link to collide with current link
-                    if ~link_coll.is_real
-                        continue;
-                    end
                     
-                    % filter out repetitive collision pairs 
                     already_exist = false; % if the current pair of collision already exists in the collision pair
                     if ~isempty(all_collision_pairs)
                         for p = 1:numel(all_collision_pairs)
@@ -141,30 +196,51 @@ function [c, c_grad, param, ht_c, ht_c_grad] = symNonlInequalityConstraints(hand
                             end   
                         end
                     end
-                    if already_exist
+
+                    if already_exist % if this distance has already been registered before
                         continue;
                     else
+                        if all([k_f,k_l]) % This is a finger link
+                            link_coll = hand.F{k_f}.Link{k_l}; % link to collide with current link
+                            if link_coll.is_real
+                                y1 = link_coll.symbolic.HT_this(1:3,4); % end points of collided link
+                                y2 = link_coll.symbolic.HT_next(1:3,4);
+
+                                % Here is the min. distance between two 3d line segments.
+                                % Not min. distance between two 3d lines!
+                                dist = distanceBTW2Lines(x1,x2,y1,y2,5); % minimum distance between two links (line segments) N=5: 5 sampling points
+                                % All virtual father links will result in a 1*1 dist.
+                                %%% Substitute all parameters (qi) that are not in X_key with hand joint values
+                                symvars = symvar(dist);
+                                subKeys = symvars(~ismember(symvars,X_key)); % symvars that belong to dict_q but not X_key, need to be substituted
+                                if ~isempty(subKeys)
+                                    subValues = hand.q(ismember(dict_q,subKeys)); % subs them using hand default joint angle values
+                                    dist = subs(dist, subKeys, subValues.');
+                                end
+                                c(end+1 : end+numel(dist)) = 2*link_r - dist;
+                            end
+                        else % This is palm
+                            points_inr = hand.P.points_inr; % (N,3) vertices of palm shape
+                            pInr = mean(points_inr, 1); % center point on the palm surface
+                            assert(isequal(size(pInr),[1,3]));
+                            palm_normal = hand.P.contact.symbolic.n(:); % normal direction
+                            dist2palm = sym(zeros(1,5));
+                            for d = 0:(5-1)
+                                xi = x1 + (x2-x1)*d/(5-1);
+                                dist2palm(d+1) = dot(palm_normal,xi-pInr(:));
+                            end
+
+                            symvars = symvar(dist2palm);
+                            subKeys = symvars(~ismember(symvars,X_key)); % symvars that belong to dict_q but not X_key, need to be substituted
+                            if ~isempty(subKeys)
+                                subValues = hand.q(ismember(dict_q,subKeys)); % subs them using hand default joint angle values
+                                dist2palm = subs(dist2palm, subKeys, subValues.');
+                            end
+                            c(end+1 : end+numel(dist2palm)) = link.radius - dist2palm;
+                        end
                         all_collision_pairs{end+1} = [idx_f,idx_l;k_f,k_l];
                     end
-                    y1 = link_coll.symbolic.HT_this(1:3,4); % end points of collided link
-                    y2 = link_coll.symbolic.HT_next(1:3,4);
                     
-                    % Here is the min. distance between two 3d line segments.
-                    % Not min. distance between two 3d lines!
-                    dist = distanceBTW2Lines(x1,x2,y1,y2,5); % minimum distance between two links (line segments) N=5: 5 sampling points
-                    % All virtual father links will result in a 1*1 dist.
-                    %%% Substitute all parameters (qi) that are not in X_key with hand joint values
-                    symvars = symvar(dist);
-                    subKeys = symvars(~ismember(symvars,X_key)); % symvars that belong to dict_q but not X_key, need to be substituted
-                    if ~isempty(subKeys)
-                        subValues = hand.q(ismember(dict_q,subKeys)); % subs them using hand default joint angle values
-                        dist = subs(dist, subKeys, subValues.');
-                    end
-                    try
-                        c(end+1 : end+numel(dist)) = 2*link_r - dist;
-                    catch
-                        disp('I don`t know.');
-                    end
                 end
                     
             end
@@ -175,7 +251,7 @@ function [c, c_grad, param, ht_c, ht_c_grad] = symNonlInequalityConstraints(hand
     fprintf('%d\n', c_idx(end));
 
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    % Inequality Constraint 4: Collision Avoidance
+    % Inequality Constraint 5: Collision Avoidance
     % Collision between target object and already grasped objects
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     grasped_objects = param.grasped_objects;

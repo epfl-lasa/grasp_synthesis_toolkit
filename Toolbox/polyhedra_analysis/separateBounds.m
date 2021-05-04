@@ -78,7 +78,7 @@ function [A,b,Aeq,beq,lb,ub,report] = separateBounds( A,b,Aeq,beq,tol )
 %
 %        max(abs(A(:,i)))>=tol*sum(abs(A(i,:)))
 %
-%The default beavior corresponds to tol=1.
+%The default behavior corresponds to tol=1.
 
 
   %%%%begin parsing

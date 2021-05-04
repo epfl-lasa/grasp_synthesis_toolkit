@@ -102,7 +102,7 @@ function finger = moveFinger(finger, q, eval_type)
         finger = addLinkToFinger(finger, update_link);
         
     else
-        error('Unexpcted case.');
+        error('Unexpected case.');
     end
 end
 

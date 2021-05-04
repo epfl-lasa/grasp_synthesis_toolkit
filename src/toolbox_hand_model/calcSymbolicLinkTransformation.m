@@ -87,7 +87,7 @@ function finger = calcSymbolicLinkTransformation(finger)
         HTcp = refCF * HTr2cp; % (contact point), set base as the reference point of the link % contact point: HTcp(1:3,4)
         HTlc = refCF * HTr2lc; % (link center), at the same height as the contact point in local frame, but at the central axis of link
 
-        finger.Link{l}.contact.symbolic.refCF = refCF; % reference CF of contact point: locats at the base of the link
+        finger.Link{l}.contact.symbolic.refCF = refCF; % reference CF of contact point: locates at the base of the link
 
         finger.Link{l}.symbolic.HT_this = refJoint_old; % (4,4)
         finger.Link{l}.symbolic.HT_next = referenceJoint; % (4,4)
@@ -131,7 +131,7 @@ function finger = calcSymbolicLinkTransformation(finger)
         %%% [contact point dist] dist from contact point to an external point
         d = finger.Link{l}.contact.symbolic.p(:) - x0; % from an external point (e.g. object CoM), pointing towards contact position on the link
         finger.Link{l}.contact.symbolic.d = d;
-        cp_dist = d'*d; % Eucledian distance from contact point to a space point
+        cp_dist = d'*d; % Euclidean distance from contact point to a space point
         finger.Link{l}.contact.symbolic.cp_dist = cp_dist; % [ L, alp, phi, q1...4, rho, x, y, z]
 
         %%% [approximation of force cone]
@@ -148,7 +148,7 @@ function finger = calcSymbolicLinkTransformation(finger)
 
         vn_i = -d; % (3,1) % from contact point, pointing towards object center
         vn_i = vn_i./sqrt(ones(1,3)*(vn_i.*vn_i)); % vectorized form of normalization, equivalent to: vn_i = vn_i./norm(vn_i);
-        TC_torsinal = f_gamma*vn_i; % Torsinal torque (soft finger)
+        TC_torsinal = f_gamma*vn_i; % Torsional torque (soft finger)
         finger.Link{l}.contact.symbolic.TC_torsinal = TC_torsinal; % [ L, alp, phi, q1...4, rho, x, y, z]
     end
 

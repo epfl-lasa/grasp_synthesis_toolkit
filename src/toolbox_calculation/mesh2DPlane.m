@@ -15,11 +15,11 @@ function [Pm,k,k_ch] = mesh2DPlane(P)
 
 N = size(P,1);
 
-p1 = P(1,:); % use three non-colinear points
+p1 = P(1,:); % use three non-collinear points
 p2 = P(2,:);
 p3 = P(3,:); k = 3;
 
-% filter out colinear points
+% filter out collinear points
 while (dot(p1(:)-p2(:),p1(:)-p3(:))/(norm(p1(:)-p2(:))*norm(p1(:)-p3(:)))==1) && (k<size(P,1))
     k = k+1;
     p3 = P(k,:);

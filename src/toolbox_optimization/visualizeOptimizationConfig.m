@@ -84,7 +84,7 @@ function visualizeOptimizationConfig(hand, object_list, X_sol, param, fig_title,
         W = zeros(6,ncp*k); % (6,ncp*k) to save the F-cone and T-cone of all contact points
         for i = 1:ncp
             if ~all(os_info{i}) % include 0, this is palm
-                cp = pc; % assgin palm contact to contact point
+                cp = pc; % assign palm contact to contact point
                 cn = sym(hand.P.contact.symbolic.n);
                 contact = hand.P.contact;
 
@@ -122,7 +122,7 @@ function visualizeOptimizationConfig(hand, object_list, X_sol, param, fig_title,
                 key_cp = ismember(X_key, symvar(cp));
                 cp = double(subs(cp, X_key(key_cp), X_sol(key_cp)));
 
-                cn = Cn(:,idx); % [ phi14, q11, q12, q13, q14]
+                cn = Cn(:,idx); % [phi14, q11, q12, q13, q14]
 
                 key_cn = ismember(X_key, symvar(cn));
                 cn = double(subs(cn, X_key(key_cn), X_sol(key_cn)));
@@ -149,9 +149,9 @@ function visualizeOptimizationConfig(hand, object_list, X_sol, param, fig_title,
                     % plotVectorCone(cp,TC_i,'g',10);
                     % hold on;
 
-                    % Notice that torsinal torque can has different directions
+                    % Notice that torsional torque can has different directions
                     %{
-                    TC_t_i = contact.symbolic.TC_torsinal; % torsinal torque component
+                    TC_t_i = contact.symbolic.TC_torsinal; % torsional torque component
                     TC_t_i = subs(TC_t_i, {rho_i,'L'}, {link.radius,link.L});
                     key = ismember(X_key, symvar(TC_t_i));
                     TC_t_i = double(subs(TC_t_i, X_key(key), X_sol(key)));

@@ -52,7 +52,7 @@ function [regParams,Bfit,ErrorStats] = absor(A,B,varargin)
 %     regParams.R:   The estimated rotation matrix, R
 %     regParams.t:   The estimated translation vector, t
 %     regParams.s:   The estimated scale factor.
-%     regParams.M:   Homogenous coordinate transform matrix [s*R,t;[0 0 ... 1]].
+%     regParams.M:   Homogeneous coordinate transform matrix [s*R,t;[0 0 ... 1]].
 %
 %     For 3D problems, the structure includes
 %
@@ -247,7 +247,7 @@ if nargout>2
     if ~isempty(weights)
         err=err.*sqrtwts;
     end
-    ErrorStats.errlsq=norm(err)*sqrt(sumwts); %unnormalize the weights
+    ErrorStats.errlsq=norm(err)*sqrt(sumwts); %unnormalizes the weights
     ErrorStats.errmax=max(err);
 end
     

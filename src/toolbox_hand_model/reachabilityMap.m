@@ -1,7 +1,7 @@
 % To test this module, just run this file w/o any parameters.
 
 function [map_hand, robot] = reachabilityMap(robot, fngrs2spl, if_plot, if_save)
-% Calculate the rechability map of the given robotic hand. Reachability map is a convex set of the spatial positions that
+% Calculate the reachability map of the given robotic hand. Reachability map is a convex set of the spatial positions that
 % the finger patches (usually finger tips) of the robotic hand can reach.
 % Input:
 %     * robot: robot model. if not assigned, use paradigmatic hand instead
@@ -55,7 +55,7 @@ function [map_hand, robot] = reachabilityMap(robot, fngrs2spl, if_plot, if_save)
         
         map_finger = cell(1, nl); % construct the rmap of the finger, treat fingertip as one link
         
-        % Generate meshgrid for sampling over joint space, instead of using multi-later for-loops
+        % Generate mesh grid for sampling over joint space, instead of using multi-later for-loops
         q_dim = cell(1,nd); % Input variables: each dimension (joint) of q
         for d = 1:nd
             if ~finger.active_joints(d) % if already used (inactive)
@@ -66,7 +66,7 @@ function [map_hand, robot] = reachabilityMap(robot, fngrs2spl, if_plot, if_save)
             end
             delta_q = delta_q * 1.2; % attenuation factor, increase the sample step length
         end
-        q_mesh = cell(1,nd); % output meshgrid, each cell is value of one dimension
+        q_mesh = cell(1,nd); % output mesh grid, each cell is value of one dimension
         [q_mesh{:}] = ndgrid(q_dim{:});
         num_q = numel(q_mesh{1}); % number of all q-values to sample
         % fprintf('Total number of joint angle combinations: %d\n', num_q);
@@ -117,9 +117,9 @@ function [map_hand, robot] = reachabilityMap(robot, fngrs2spl, if_plot, if_save)
             map_finger{l} = map_link;
         end
         
-        %% Construct meshgrid of link based on sampling of finger joints (obtained above) and then construct convex hull of sample points for each link (instead of each finger)
+        %% Construct mesh grid of link based on sampling of finger joints (obtained above) and then construct convex hull of sample points for each link (instead of each finger)
         for l = 1:finger.nlink-1 % Only for all real and virtual links except fingertip
-            % disp('Construct link meshgied...');
+            % disp('Construct link meshed...');
             map_link = map_finger{l};
             map_next = map_finger{l+1};
             linkmesh = cat(1, map_link.p, map_next.p); % concatenate the samples of the link start (this) and link end (next)
@@ -148,7 +148,7 @@ function [map_hand, robot] = reachabilityMap(robot, fngrs2spl, if_plot, if_save)
                 fprintf('* real link: %d\n', finger.idx_real_link(l));
             end
             
-            map_link.linkmesh = linkmesh; % the meshgrid of all reachable positions of the link
+            map_link.linkmesh = linkmesh; % the mesh grid of all reachable positions of the link
             map_link.bndryIndices = k; % Boundary set of joint reachable space, one CH for each finger
             map_link.cnvxIndices = k_ch; % Indices of points that form the Convex set
             

@@ -1,5 +1,5 @@
 function d = distanceBTW2Lines(x1,x2,y1,y2,N)
-% This function calculates distance between two lines X (x1->x2) and Y (y1->y2), sepcified by
+% This function calculates distance between two lines X (x1->x2) and Y (y1->y2), specified by
 % pair of 3D points (x1, x2) and (y1 ,y2), respectively. x1,x2 are
 % end-points of line segment X; y1,y2 are end-points of line segment Y.
 % All data points are column vectors in shape (3,1)
