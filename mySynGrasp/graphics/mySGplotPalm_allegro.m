@@ -1,11 +1,13 @@
-function mySGplotPalm_allegro(hand,radius,nps)
+function mySGplotPalm_allegro(hand,transp,radius,nps)
 
-if nargin == 1
-    % default settings
-    radius = 5/1000;
-    nps = 5;
-elseif nargin == 2
-    nps = 5;
+if nargin < 4
+    nps = 5; % nps is the resolution of sphere
+end
+if nargin < 3
+    radius = hand.hand_radius;
+end
+if nargin < 2
+    transp = 1;
 end
 
 F = hand.F;
@@ -51,6 +53,6 @@ for i = 1:size(cp,1)
 end
 
 k = convhulln(X);
-trisurf(k,X(:,1),X(:,2),X(:,3));
+trisurf(k,X(:,1),X(:,2),X(:,3),'FaceAlpha',transp);
 colormap([0.3 0.3 0.3]);
 hold on

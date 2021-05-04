@@ -174,7 +174,7 @@ function [map_hand, robot] = reachabilityMap(robot, fngrs2spl, if_plot, if_save)
     palmmesh_xyz = cat(2,palmmesh_xy,ones(size(palmmesh_xy,1),1)); % (N,3) add Z = 0 coordinates
     palmmesh_xyz_h = cat(2,palmmesh_xyz,ones(size(palmmesh_xyz,1),1)); % (N,4), homogeneous coordinates
 
-    palmmesh_h = robot.P.HT2inr*(robot.T*palmmesh_xyz_h.'); % first project back to palm plane, then project from palm to palm inner surface
+    palmmesh_h = robot.P.HTctr2inr*(robot.T*palmmesh_xyz_h.'); % first project back to palm plane, then project from palm to palm inner surface
     palmmesh = palmmesh_h(1:3,:).'; % (N,3)
     map_hand{nf+1} = struct('idx', 0, 'linkmesh', palmmesh);
     % disp('--------------------------------------------------');
