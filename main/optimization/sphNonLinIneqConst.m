@@ -1,18 +1,14 @@
 % Obtain the symbolic form of nonlinear inequality constraints
-function [c, c_grad, param, ht_c, ht_c_grad] = cylNonLinIneqConst(hand, param)
+function [c, c_grad, param, ht_c, ht_c_grad] = sphNonLinIneqConst(hand, param)
     os_info = param.os.os_info;
     
-    % parameters
-    ncp = param.ncp;                % number of contact points (palm incl.)
-    obj_r = param.obj.radius;       % object radius
-    link_r = param.hand_radius;     % finger radius of the hand
-   
-    % symbolic variables
+    obj_r = param.obj.radius; % object radius
+    link_r = hand.hand_radius;
+    
+    ncp = param.ncp; % number of contacts
     X_key = param.X_key;
-    obj_axpt = param.obj.sym.axisPtArray;   % equidistant points along axis
-    obj_cnt = param.obj.sym.ctr;            % object center
-
-    dict_q = param.dict_q; % dictionary of ALL symbolic joint angles: q11,q12,...
+    oc = [sym('x');sym('y');sym('z')]; % object center
+    dict_q = param.dict_q; % dictionary of symbolic variables: q11,q12,...
     
     fprintf('\nConstructing Nonl. Inequality Constraints: \n');
     c = sym([]); % to save the symbolic form
@@ -27,7 +23,7 @@ function [c, c_grad, param, ht_c, ht_c_grad] = cylNonLinIneqConst(hand, param)
     % Notice that this only contains all previous links (incl. virtual
     % ones), since the current link is in contact, and this constraint is
     % formulated as nonl equality constraint.
-    fprintf('* [1/5] Collision avoidance (object vs. active finger links): ');
+    fprintf('* Collision avoidance (object vs. links): ');
     for i = 1:ncp
         if ~all(os_info{i})
             % collision with palm is guaranteed in 'Collision avoidance (object vs. palm)' 
@@ -35,52 +31,15 @@ function [c, c_grad, param, ht_c, ht_c_grad] = cylNonLinIneqConst(hand, param)
         else
             [idx_f, idx_l] = deal(os_info{i}(1),os_info{i}(2)); % index of finger and link
             finger = hand.F{idx_f};
-            nq_pre = idx_l-1;
-            if (idx_l > finger.n)
-                warining("Nonlinear constriaint definition: link index of fingertip");
-            end
+            nq_pre = min([idx_l, finger.n]); % number of joints ahead of idx_lnk, in case idx_lnk > finger.n (possible for fingertip link)
             for j = 1:nq_pre % Iterate over all links, including link in contact ('idx_l')
                 link = finger.Link{j};
-                % define constraints only if the finger link is real
-                if link.is_real
-                    % [Cylinder implementation]
-                    nAxpt = size(obj_axpt,2); % obj_axpt is (3 x n_points)
-                    eta = 1.5;
-                    nLinkPoint = ceil(link.L/(2*hand.hand_radius*sqrt(eta^2-1)));
-                    pointDist = 1/nLinkPoint;
-                    del = pointDist/2 + [0:nLinkPoint-1].*pointDist;
-                    for k=1:nAxpt
-                        link_pos_this = link.symbolic.HT_this(1:3,4);
-                        link_pos_next = link.symbolic.HT_next(1:3,4);
-                        delPos = link_pos_next - link_pos_this;
-                        for l=1:nLinkPoint
-                            link_pos = link_pos_this + del(l)*delPos;
-                            % increase the radius by a factor eta
-                            c_ij = link_r*eta + obj_r - norm(link_pos-obj_axpt(:,k),2);
-                            c(end+1) = c_ij;
-                        end
-                    end
+                if ~link.is_real
+                    continue;
                 end
-            end
-            % define collision avoidance contacting link
-            link = finger.Link{idx_l};
-            nAxpt = size(obj_axpt,2); % obj_axpt is (3 x n_points)
-            %%% assume that the maximal penetration is 10% of the hand
-            %%% radius
-            d_max = hand.hand_radius * cos(asin(0.5));
-            nLinkPoint = ceil(link.L/d_max);
-            pointDist = 1/nLinkPoint;
-            del = pointDist/2 + [0:nLinkPoint-1].*pointDist;
-            for k=1:nAxpt
-                link_pos_this = link.symbolic.HT_this(1:3,4);
-                link_pos_next = link.symbolic.HT_next(1:3,4);
-                delPos = link_pos_next - link_pos_this;
-                for l=1:nLinkPoint
-                    link_pos = link_pos_this + del(l)*delPos;
-                    % take the true link radius here
-                    c_ij = link_r + obj_r - norm(link_pos-obj_axpt(:,k),2);
-                    c(end+1) = c_ij;
-                end
+                link_dist = link.symbolic.link_dist;
+                c_ij = -(link_dist-link_r-obj_r); % symvar: [q1...q4, x, y, z]
+                c(end+1) = c_ij; % c<=0; distance from link to should larger than radius of finger digit cylinder plus radius of object
             end
         end
     end
@@ -92,35 +51,24 @@ function [c, c_grad, param, ht_c, ht_c_grad] = cylNonLinIneqConst(hand, param)
     % Inequality Constraint 2: Collision Avoidance
     % Collision between object and included fingers
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    fprintf('* [2/5] Collision avoidance (object vs. included fingers): ');
+    fprintf('* Collision avoidance (object vs. included fingers): ');
     % included finger: finger that between two active fingers, e.g. the middle finger is included if using index finger and ring finger for grasping
     f_idx_list = zeros(1,ncp); % list of finger index
     for i = 1:ncp
         f_idx_list(i) = os_info{i}(1);
     end
-    inBetweenF = min(f_idx_list)+1:max(f_idx_list)-1; % indices of in-between fingers
-  
-    if ~isempty(inBetweenF) % in-between finger exists
-        for f = 1:length(inBetweenF)
-            finger = hand.F{inBetweenF(f)}; % same as collision avoidance: father-links vs. object
-            for i = 1:finger.n-1
-                link = finger.Link{i};
-                nAxpt = size(obj_axpt,2);
-                for k=1:nAxpt
-                    link_pos_this = link.symbolic.HT_this(1:3,4);
-                    link_pos_next = link.symbolic.HT_next(1:3,4);
-                    eta = 1.5;
-                    nLinkPoint = ceil(link.L/(2*hand.hand_radius*sqrt(eta^2-1)));
-                    pointDist = 1/nLinkPoint;
-                    del = pointDist/2 + [0:nLinkPoint-1].*pointDist; % in [0,1]
-                    delPos = link_pos_next - link_pos_this; % symbolic
-                    
-                    for j=1:nLinkPoint
-                        link_pos = link_pos_this + del(j)*delPos;
-                        c_ij = link_r + obj_r - norm(link_pos - obj_axpt(:,k),2) ;
-                        c(end+1) = c_ij;
-                    end
-                end
+    f_idx_list(~f_idx_list) = []; % remove 0 (palm) from list
+    n_diff = max(f_idx_list)-min(f_idx_list); % number of in-between fingers
+    
+    if n_diff>1 % in-between finger exists
+        for f = min(f_idx_list)+1:max(f_idx_list)-1
+            finger = hand.F{f}; % same as collision avoidance: father-links vs. object
+            for j = 1:finger.n-1
+                link = finger.Link{j};
+                link_dist = link.symbolic.link_dist; % this is the distance from link central axis to an external 3d point [x,y,z]
+                c_ij = -(link_dist-link_r-obj_r); % symvar: [q1...q4, x, y, z]
+                c_ij = subs(c_ij, finger.q_sym, finger.q.');
+                c(end+1) = c_ij;
             end
         end
     end
@@ -130,35 +78,28 @@ function [c, c_grad, param, ht_c, ht_c_grad] = cylNonLinIneqConst(hand, param)
     fprintf('%d\n', c_idx(end));
     
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    % Inequality Constraint 3: Collision Avoidance
+    % Inequality Constraint 4: Collision Avoidance
     % Collision between object and palm (finger bases)
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    fprintf('* [3/5] Collision avoidance (object vs. palm): ');
-    
-    % [TODO] implement that part!! (use axis points)
-    %x1 = hand.F{1}.symbolic.base(1:3,4);
-    %x2 = hand.F{end}.symbolic.base(1:3,4);
-    % Line x1-x2 is the 'finger base line' that connects all finger bases
-    % This detection is realized by calculating the distance between object
-    % center and the finger base line
-    %dist = norm(cross(obj_cnt-x1,obj_cnt-x2))/norm(x2-x1);
+    fprintf('* Collision avoidance (object vs. palm): ');
+   
+    % compute the distance of the sphere to the palm using a projection on
+    % the normal vector of the palm
+   
     palmPt = hand.P.points_inr(1,:).'; % point on the inner surface of the palm
-    nAxpt = size(obj_axpt,2);
     palmNormal = hand.P.contact.symbolic.n;
-    for k=1:nAxpt
-        dist = palmNormal.' * (obj_axpt(:,k)-palmPt); % project the object on the normal
-        c(end+1) = (link_r + obj_r)^2 - dist^2;
-    end
+    dist = palmNormal.' * (oc-palmPt); % project the object on the normal
+    c(end+1) = obj_r - dist;
     
     c_idx(end+1) = numel(c)-sum(c_idx);
     c_name{end+1} = 'Collision avoidance (object vs. palm)';
     fprintf('%d\n', c_idx(end));
 
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    % Inequality Constraint 4: Collision Avoidance
+    % Inequality Constraint 3: Collision Avoidance
     % Collision between current link and links from other fingers
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    fprintf('* [4/5] Collision avoidance (this link vs. other links): ');
+    fprintf('* Collision avoidance (this link vs. other links): ');
     all_collision_pairs = {};
     for i = 1:ncp
         if ~all(os_info{i})
@@ -179,18 +120,16 @@ function [c, c_grad, param, ht_c, ht_c_grad] = cylNonLinIneqConst(hand, param)
 
                 for k = 1:numel(coll) % link k collides with current link
                     [k_f,k_l] = deal(coll{k}(1),coll{k}(2));
-                    if k_f == 0 
-                        % constraint between finger link and palm
-                        % add constraints for both extremities of the link
-                        palm_point = hand.P.points_inr(1,:)'; % select a point on the inner hand surface
-                        palm_normal = hand.P.contact.symbolic.n; % palm normal
+                    if k_f ==0
+                        palm_point = hand.P.points_inr(1,:).'; % point on the inner surface of the palm
+                        palm_normal = hand.P.contact.symbolic.n;
                         % only check the link endpoints (palm is flat)
                         dist_next = palm_normal.' * (x2 - palm_point);
                         c(end+1) = hand.hand_radius - dist_next;
                         % this might be omitted probable [TODO]
                         dist_this = palm_normal.' * (x1 - palm_point);
                         c(end+1) = link_r - dist_this;
-                        continue;
+                        continue; % [TODO implemnt collision of finger and palm]
                     end
                     if k_f == idx_f % skip link on the same finger
                         continue;
@@ -246,69 +185,50 @@ function [c, c_grad, param, ht_c, ht_c_grad] = cylNonLinIneqConst(hand, param)
     fprintf('%d\n', c_idx(end));
 
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    % Inequality Constraint 5: Collision Avoidance
+    % Inequality Constraint 4: Collision Avoidance
     % Collision between target object and already grasped objects
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     grasped_objects = param.grasped_objects;
     if ~isempty(grasped_objects)
-        fprintf('* [5/5] Collision avoidance (target object and object in grasp): ');
+        fprintf('* Collision avoidance (target object and object in grasp): ');
         nobj = numel(grasped_objects);
         for i = 1:nobj
             obj_i = grasped_objects{i};
             if strcmp(obj_i.type,'sph')
-                % THIS is a cylinder, OTHER is a sphere
-                sph_oc = obj_i.ctr;
-                sph_radius = obj_i.radius;
-                % add a constraint for each of the n axis points
-                nb_axpt_this = size(obj_axpt,2); % obj_axpt is (3 x n_points)
-                for j = 1:nb_axpt
-                    axis_point = obj_axpt(:,k);
-                    dist = norm(sph_oc-axis_point);
-                    c(end+1) = sph_radius + obj_r - dist;
-                end
+                % the other object is a sphere. Add 1 constraint for the
+                % distance
+                oc_i = obj_i.ctr;
+                radius_i = obj_i.radius;
+                c(end+1) = (obj_r+radius_i) - norm(oc(:)-oc_i(:)); 
+                % distance between centers of target object and the grasped
+                % sphere is larger than the sum of their radius
             elseif strcmp(obj_i.type,'cyl')
-                % THIS is a cylinder and OTHER is a cylinder
-                cyl_radius = obj_i.radius;
-                cyl_axpt = obj_i.axPtArray;
-                nb_axpt_other = size(cyl_axpt,2);
-                nb_axpt_this = size(obj_axpt,2); % obj_axpt is (3 x n_points)
-                for k=1:nb_axpt_other
-                    for j=1:nb_axpt_this
-                        axis_point_other = cyl_axpt(:,k);
-                        axis_point_this = obj_axpt(:,j);
-                        dist = norm(axis_point_this - axis_point_other);
-                        c(end+1) = cyl_radius + obj_r - dist;
-                    end
+                % the grasped object is a sphere. Add distance constraint
+                % for all of the nAxis points
+                nb_axpt = size(obj_i.axPtArray,2);
+                for j=1:nb_axpt
+                    axis_point = obj_i.axPtArray(:,j);
+                    radius_cyl = obj_i.radius;
+                    c(end+1) = (obj_r+radius_cyl) - norm(oc(:) - axis_point);
                 end
             elseif strcmp(obj_i.type,'comp')
-                comp_radius = obj_i.radius;
-                comp_axpt = obj_i.axPtArray;
-                nb_axpt_comp = size(cyl_axpt,2);
-                nb_axpt_this = size(obj_axpt,2); % obj_axpt is (3 x n_points)
-                % collision with the cylindrical part of the OTHER object
-                for k=1:nb_axpt_comp
-                    % add constraint for all points in the cylinder of THIS
-                    % object
-                    for j=1:nb_axpt_this
-                        axis_point_cyl = comp_axpt(:,k);
-                        axis_point_this = obj_axpt(:,j);
-                        dist = norm(axis_point_this - axis_point_cyl);
-                        c(end+1) = comp_radius + obj_r - dist;
-                    end
+                % the grasped object is a composite object.
+                % Add constraints for the cylinder plus for additional
+                % spheres
+                nb_axpt = size(obj_i.axPtArray,2);
+                for j=1:nb_axpt
+                    axis_point = obj_i.axPtArray(:,j);
+                    radius_cyl = obj_i.radius;
+                    c(end+1) = (obj_r+radius_cyl) - norm(oc(:) - axis_point);
                 end
-                for k=1:length(obj_i.sphereRadius)
-                    other_sph_rad = obj_i.sphereRadius(k);
-                    other_sph_ctr = obj_i.sphereCenter(k);
-                    % loop over cylindrical part of THIS object
-                    for j=1:nb_axpt_this
-                        axis_point_this = obj_axpt(:,j);
-                        dist = norm(axis_point_this - other_sph_ctr);
-                        c(end+1) = other_sph_rad + obj_r - dist;
-                    end
+                n_spheres = length(obj_i.sphereRadius);
+                for j=1:n_spheres
+                    sphere_center = obj_i.sphereCenter(j);
+                    radius_sph = obj_i.sphereRadius(j);
+                    c(end+1)=(obj_r + radius_sph) - norm(oc(:) - sphere_center);
                 end
-                % collision of the additional spheres of THE OTHER object
             else
-                warning('constraint definition: object type invalid\n');
+                warning('Constraint definition: object type not valid\n');
             end
         end
         c_idx(end+1) = numel(c)-sum(c_idx);

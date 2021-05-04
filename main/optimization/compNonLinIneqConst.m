@@ -37,7 +37,7 @@ function [c, c_grad, param, ht_c, ht_c_grad] = compNonLinIneqConst(hand, param)
             finger = hand.F{idx_f};
             nq_pre = idx_l-1;
             if (idx_l > finger.n)
-                warning("Nonlinear constriaint definition: link index of fingertip");
+                warning("Nonlinear constriant definition: link index of fingertip");
             end
             for j = 1:nq_pre % Iterate over all links, including link in contact ('idx_l')
                 link = finger.Link{j};
@@ -61,7 +61,7 @@ function [c, c_grad, param, ht_c, ht_c_grad] = compNonLinIneqConst(hand, param)
                         end
                     end
                     % collsion with other spheres
-                    nSpheres = length(obj.sphereRadius)
+                    nSpheres = length(obj.sphereRadius);
                     for k=1:nSpheres
                         for l=1:nLinkPoint
                             link_pos = link_pos_this + del(l)*delPos;
@@ -95,7 +95,7 @@ function [c, c_grad, param, ht_c, ht_c_grad] = compNonLinIneqConst(hand, param)
                 end
             end
             % collsion with other spheres
-            nSpheres = length(obj.sphereRadius)
+            nSpheres = length(obj.sphereRadius);
             for k=1:nSpheres
                 for l=1:nLinkPoint
                     link_pos = link_pos_this + del(l)*delPos;
@@ -145,7 +145,7 @@ function [c, c_grad, param, ht_c, ht_c_grad] = compNonLinIneqConst(hand, param)
                     end
                 end
                 % collsion with other spheres
-                nSpheres = length(obj.sphereRadius)
+                nSpheres = length(obj.sphereRadius);
                 for k=1:nSpheres
                     for l=1:nLinkPoint
                         link_pos = link_pos_this + del(l)*delPos;
@@ -209,7 +209,17 @@ function [c, c_grad, param, ht_c, ht_c_grad] = compNonLinIneqConst(hand, param)
 
                 for k = 1:numel(coll) % link k collides with current link
                     [k_f,k_l] = deal(coll{k}(1),coll{k}(2));
-
+                    if k_f == 0
+                        palm_point = hand.P.points_inr(1,:).'; % point on the inner surface of the palm
+                        palm_normal = hand.P.contact.symbolic.n;
+                        % only check the link endpoints (palm is flat)
+                        dist_next = palm_normal.' * (x2 - palm_point);
+                        c(end+1) = hand.hand_radius - dist_next;
+                        % this might be omitted probable [TODO]
+                        dist_this = palm_normal.' * (x1 - palm_point);
+                        c(end+1) = link_r - dist_this;
+                        continue;
+                    end
                     if k_f == idx_f % skip link on the same finger
                         continue;
                     end
@@ -273,9 +283,92 @@ function [c, c_grad, param, ht_c, ht_c_grad] = compNonLinIneqConst(hand, param)
         nobj = numel(grasped_objects);
         for i = 1:nobj
             obj_i = grasped_objects{i};
-            oc_i = obj_i.center;
-            radius_i = obj_i.radius;
-            c(end+1) = (obj_r+radius_i) - norm(obj_cnt(:)-oc_i(:)); % distance between centers of target object and anyone of the grasped object is larger than the sum of their radius
+            if strcmp(obj_i.type,'sph')
+                % the other object is a sphere. Add 1 constraint for the
+                % distance
+                sph_oc = obj_i.ctr;
+                sph_radius = obj_i.radius;
+                % add a constraint for each of the n axis points
+                nb_axpt_this = size(obj_axpt,2); % obj_axpt is (3 x n_points)
+                for j = 1:nb_axpt
+                    axis_point = obj_axpt(:,k);
+                    dist = norm(sph_oc-axis_point);
+                    c(end+1) = sph_radius + obj_r - dist;
+                end
+                for j=1:length(obj.sphereRadius)
+                    this_sph_rad = obj.sphereRadius(j);
+                    this_sph_ctr = obj.sphereCenter(j);
+                    dist = norm(this_sph_ctr - sph_oc);
+                    c(end+1) = this_sph_rad + sph_radius - dist;
+                end 
+            elseif strcmp(obj_i.type,'cyl')
+                cyl_radius = obj_i.radius;
+                cyl_axpt = obj_i.axPtArray;
+                nb_axpt_cyl = size(cyl_axpt,2);
+                nb_axpt_this = size(obj_axpt,2); % obj_axpt is (3 x n_points)
+                for k=1:nb_axpt_cyl
+                    % add constraint for all points in the cylinder of THIS
+                    % object
+                    for j=1:nb_axpt_this
+                        axis_point_cyl = cyl_axpt(:,k);
+                        axis_point_this = obj_axpt(:,j);
+                        dist = norm(axis_point_this - axis_point_cyl);
+                        c(end+1) = cyl_radius + obj_r - dist;
+                    end
+                    % add constraints for all additional spheres of THIS
+                    % object (collision with points in cylinder object)
+                    for j=1:length(obj.sphereRadius)
+                        this_sph_rad = obj.sphereRadius(j);
+                        this_sph_ctr = obj.sphereCenter(j);
+                        dist = norm(this_sph_ctr - axis_point(:,k));
+                        c(end+1) = this_sph_rad + cyl_radius - dist;
+                    end
+                end
+ 
+            elseif strcmp(obj_i.type,'comp')
+                comp_radius = obj_i.radius;
+                comp_axpt = obj_i.axPtArray;
+                nb_axpt_comp = size(cyl_axpt,2);
+                nb_axpt_this = size(obj_axpt,2); % obj_axpt is (3 x n_points)
+                % collision with the cylindrical part of the OTHER object
+                for k=1:nb_axpt_comp
+                    % add constraint for all points in the cylinder of THIS
+                    % object
+                    for j=1:nb_axpt_this
+                        axis_point_cyl = comp_axpt(:,k);
+                        axis_point_this = obj_axpt(:,j);
+                        dist = norm(axis_point_this - axis_point_cyl);
+                        c(end+1) = comp_radius + obj_r - dist;
+                    end
+                    % add constraints for all additional spher
+                    for j=1:length(obj.sphereRadius)
+                        this_sph_rad = obj.sphereRadius(j);
+                        this_sph_ctr = obj.sphereCenter(j);
+                        dist = norm(this_sph_ctr - axis_point(:,k));
+                        c(end+1) = this_sph_rad + cyl_radius - dist;
+                    end
+                end
+                % collision of the additional spheres of THE OTHER object
+                for k=1:length(obj_i.sphereRadius)
+                    other_sph_rad = obj_i.sphereRadius(k);
+                    other_sph_ctr = obj_i.sphereCenter(k);
+                    % loop over cylindrical part of THIS object
+                    for j=1:nb_axpt_this
+                        axis_point_this = obj_axpt(:,j);
+                        dist = norm(axis_point_this - other_sph_ctr);
+                        c(end+1) = other_sph_rad + obj_r - dist;
+                    end
+                    % loop over spheres of THIS object
+                    for j=1:length(obj.sphereRadius)
+                        this_sph_rad = obj.sphereRadius(j);
+                        this_sph_ctr = obj.sphereCenter(j);
+                        dist = norm(other_sph_ctr - this_sph_ctr);
+                        c(end+1) = other_sph_rad  + this_sph_rad - dist;
+                    end
+                end
+            else
+                warning('constraint definition: object type invalid\n');
+            end
         end
         c_idx(end+1) = numel(c)-sum(c_idx);
         c_name{end+1} = 'Collision avoidance (target object vs. grasped objects)';

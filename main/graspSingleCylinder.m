@@ -1,5 +1,8 @@
-function [hand, object, opt_soln, opt_cost, if_solution] = graspSingleCylinder(hand, object, recon, os_pair, if_plot, if_save, file_title)
-
+function [hand, object, opt_soln, opt_cost, if_solution] = graspSingleCylinder(hand, object, recon, os_pair, if_plot, if_save, file_title, grasped_objects)
+    
+    if nargin < 6
+        grasped_objects = {};
+    end
     if nargin < 5
         if_save = false;
     end
@@ -8,25 +11,28 @@ function [hand, object, opt_soln, opt_cost, if_solution] = graspSingleCylinder(h
     end
     
     load('../database/problem_config.mat');
+    reset_symbolic_functions();
     
-    hand = activateLinkContact(hand);
+    %hand = activateLinkContact(hand);
 
     %% Step 1: Construct/load reachability map
     if recon.rmap || ~isfield(hand, 'reachability_map')
         disp('Constructing hand reachability map...');
         [rmap, hand] = reachabilityMap(hand, 'all', false);
-        fprintf('\n[2] Hand reachability map constructed.\n');
+        fprintf('\n[3] Hand reachability map constructed.\n');
         save('../database/models.mat', 'hand');
         disp('Hand model updated: link reachability map');
     else
         rmap = load('reachable_map.mat');
         rmap = rmap.map_hand;
-        fprintf('\n[2] Hand reachability map loaded.\n');
+        fprintf('\n[3] Hand reachability map loaded.\n');
     end
-    plotReachabilityMap(hand, rmap);
+    if if_plot
+        plotReachabilityMap(hand, rmap);
+    end
     
     %% Step 2: Construct collision map
-    if ~isfield(hand,'collision_map')
+    if recon.os || ~isfield(hand,'collision_map')
         disp('Constructing collision map...');
         hand = collisionOSSearch(hand); % collision opposition space
         save('../database/models.mat', 'hand');
@@ -57,7 +63,7 @@ function [hand, object, opt_soln, opt_cost, if_solution] = graspSingleCylinder(h
 
         fprintf('  Opp. Space: F%dL%d and F%dL%d\n', os.os_info{1}(1),os.os_info{1}(2),os.os_info{2}(1),os.os_info{2}(2));
 
-        [X_sol, Cost, param, if_trial_success] = optGraspCyl(hand, object, os); % This is the main function for optimal grasping synthesis
+        [X_sol, Cost, param, if_trial_success] = optGraspCyl(hand, object, os, grasped_objects); % This is the main function for optimal grasping synthesis
 
         if if_trial_success
             costList(end+1) = Cost;
@@ -72,7 +78,8 @@ function [hand, object, opt_soln, opt_cost, if_solution] = graspSingleCylinder(h
         if_solution = true;
         [opt_cost, opt_idx] = min(costList);
         opt_soln = solnSet{opt_idx};
-        
+        opt_soln.time_constraints = param.time_constraint
+        opt_soln.time_optimizer = param.time_optimizer;
         hand = updateHandConfig(hand, opt_soln);
         object = updateObjectConfig(object, opt_soln);
         

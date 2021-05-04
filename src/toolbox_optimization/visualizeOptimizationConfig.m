@@ -55,10 +55,7 @@ function visualizeOptimizationConfig(hand, object_list, X_sol, param, fig_title,
                         warning('Object color not specified.');
                     end
                     if (~isempty(obj_i)) && isa(obj_i,'struct')
-                        oc_i = obj_i.center;
-                        mySGplotObject(obj_i); 
-                        hold on;
-                        scatter3(oc_i(1),oc_i(2),oc_i(3),100,'b','filled');
+                        plotObject(obj_i); 
                         hold on;
                     else
                         fprintf('Nr. %d object in the given grasped objects list is empty.\n', i);

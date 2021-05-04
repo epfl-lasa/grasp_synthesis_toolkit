@@ -19,6 +19,8 @@ end
 
 if nargin < 4
     grasped_objects = {}; % empty as default
+else
+    is_sequential = true;
 end
 
 os_info = os.os_info;
@@ -90,8 +92,12 @@ objctr_0 = [(lb_x+ub_x)/2;...
     (lb_y+ub_y)/2;...
     (lb_z+ub_z)/2];
 
-obj_quat_0 = [0;0;0;1]; % added 3 rotation parameters
-
+if ~strcmp(object.type, 'sph')
+    obj_quat_0 = [0;0;0;1]; % added 3 rotation parameters
+    
+    % contact points on cylinder
+    mu_0 = zeros(ncp,1); % 0 corresponds to center of the cylinder axis
+end
 %%% joint angles
 q_lb = hand.limit(:,1); % joint lower limit (fully open)
 q_ub = hand.limit(:,2); % joint upper limit (fully closed)
@@ -99,8 +105,6 @@ q_ub = hand.limit(:,2); % joint upper limit (fully closed)
 r = 0.2; % r=0: use lower bound, r=1: use upper bound
 q_0 = r*q_lb(qactv_loop) + (1-r)*q_ub(qactv_loop); % (nq_actv,1)
 
-% contact points on cylinder
-mu_0 = zeros(ncp,1); % 0 corresponds to center of the cylinder axis
 
 %%% cylindrical coordinates
 phi_0 = zeros(ncpf,1); % in radius, angle of the cylindrical coordinate of contact point on the last link (end of the kinematic chain)
@@ -118,31 +122,52 @@ else
     coeff_0 = [];
 end
 
-X0 = [  objctr_0;...    % (3,1), 1 : 3
-        obj_quat_0;...  % (4,1) % initial rotation of the object
-        mu_0;...        % (ncp,1) initial projection of contact point
-        q_0(:);...      % (nq_actv,1), 3+1 : 3+nq_actv
-        phi_0(:);...    % (ncpf,1), 3+nq_actv+1 : 3+nq_actv+ncpf
-        alp_0(:);...    % (ncpf,1), 3+nq_actv+ncpf+1 : 3+nq_actv+2*ncpf
-        pvec_0(:);...   % (2,1), 3+nq_actv+2*ncpf+1 : 3+nq_actv+2*ncpf+2
-        coeff_0(:)];    % (k*ncp,1), 3+nq_actv+2*ncp+2+1 : 3+nq_actv+2*ncp+2+k*ncp
-
+if ~strcmp(object.type,'sph')
+    X0 = [  objctr_0;...    % (3,1), 1 : 3
+            obj_quat_0;...  % (4,1) % initial rotation of the object
+            mu_0;...        % (ncp,1) initial projection of contact point
+            q_0(:);...      % (nq_actv,1), 3+1 : 3+nq_actv
+            phi_0(:);...    % (ncpf,1), 3+nq_actv+1 : 3+nq_actv+ncpf
+            alp_0(:);...    % (ncpf,1), 3+nq_actv+ncpf+1 : 3+nq_actv+2*ncpf
+            pvec_0(:);...   % (2,1), 3+nq_actv+2*ncpf+1 : 3+nq_actv+2*ncpf+2
+            coeff_0(:)];    % (k*ncp,1), 3+nq_actv+2*ncp+2+1 : 3+nq_actv+2*ncp+2+k*ncp
+else
+    X0 = [  objctr_0;...    % (3,1), 1 : 3
+            q_0(:);...      % (nq_actv,1), 3+1 : 3+nq_actv
+            phi_0(:);...    % (ncpf,1), 3+nq_actv+1 : 3+nq_actv+ncpf
+            alp_0(:);...    % (ncpf,1), 3+nq_actv+ncpf+1 : 3+nq_actv+2*ncpf
+            pvec_0(:);...   % (2,1), 3+nq_actv+2*ncpf+1 : 3+nq_actv+2*ncpf+2
+            coeff_0(:)];    % (k*ncp,1), 3+nq_actv+2*ncp+2+1 : 3+nq_actv+2*ncp+2+k*ncp
+end
 %%% Construct index for each part of the variables
 nq_actv = sum(qactv_loop); % number of activated joints in this loop
 
-idx_oc = false(size(X0));   idx_oc(1:3) = true;
-idx_quat = false(size(X0)); idx_quat(4:7) = true;
-idx_mu = false(size(X0));   idx_mu(7+1:7+ncp) = true;
-idx_q = false(size(X0));    idx_q(7+ncp +1 : 7+ncp+nq_actv) = true;
-idx_phi = false(size(X0));  idx_phi(7+ncp+nq_actv +1 : 7+ncp+nq_actv +ncpf) = true;
-idx_alp = false(size(X0));  idx_alp(7+ncp+nq_actv+ncpf +1 : 7+ncp+nq_actv +2*ncpf) = true;
-idx_pvec = false(size(X0)); idx_pvec(7+ncp+nq_actv+2*ncpf +1 : 7+ncp+nq_actv+2*ncpf +2) = true;
-
-if cstr.fc % use force closure constraint
-    idx_coeff = false(size(X0));
-    idx_coeff(7+ncp+nq_actv+2*ncpf+2 +1 : 7+ncp+nq_actv+2*ncpf+2 +k*ncp) = true;
+if ~strcmp(object.type, 'sph')
+    idx_oc = false(size(X0));   idx_oc(1:3) = true;
+    idx_quat = false(size(X0)); idx_quat(4:7) = true;
+    idx_mu = false(size(X0));   idx_mu(7+1:7+ncp) = true;
+    idx_q = false(size(X0));    idx_q(7+ncp +1 : 7+ncp+nq_actv) = true;
+    idx_phi = false(size(X0));  idx_phi(7+ncp+nq_actv +1 : 7+ncp+nq_actv +ncpf) = true;
+    idx_alp = false(size(X0));  idx_alp(7+ncp+nq_actv+ncpf +1 : 7+ncp+nq_actv +2*ncpf) = true;
+    idx_pvec = false(size(X0)); idx_pvec(7+ncp+nq_actv+2*ncpf +1 : 7+ncp+nq_actv+2*ncpf +2) = true;
+    if cstr.fc % use force closure constraint
+        idx_coeff = false(size(X0));
+        idx_coeff(7+ncp+nq_actv+2*ncpf+2 +1 : 7+ncp+nq_actv+2*ncpf+2 +k*ncp) = true;
+    else
+        idx_coeff = [];
+    end
 else
-    idx_coeff = [];
+    idx_oc = false(size(X0));   idx_oc(1:3) = true;
+    idx_q = false(size(X0));    idx_q(3+1 : 3+nq_actv) = true;
+    idx_phi = false(size(X0));  idx_phi(3+nq_actv +1 : 3+nq_actv +ncpf) = true;
+    idx_alp = false(size(X0));  idx_alp(3+nq_actv+ncpf +1 : 3+nq_actv +2*ncpf) = true;
+    idx_pvec = false(size(X0)); idx_pvec(3+nq_actv+2*ncpf +1 : 3+nq_actv+2*ncpf +2) = true;
+    if cstr.fc % use force closure constraint
+        idx_coeff = false(size(X0));
+        idx_coeff(3+nq_actv+2*ncpf+2 +1 : 3+nq_actv+2*ncpf+2 +k*ncp) = true;
+    else
+        idx_coeff = [];
+    end
 end
 
 %%% Construct key for variables
@@ -161,8 +186,10 @@ end
 % Keys of parameters
 % [Q: Do I need to take symbolic variables of the object here?]
 key_oc = object.sym.ctr; %[sym('x');sym('y');sym('z')];
-key_quat = object.sym.quat; %sym('q',[4,1]);
-key_mu = sym('mu%d',[ncp,1]);
+if ~strcmp(object.type, 'sph')
+    key_quat = object.sym.quat; %sym('q',[4,1]);
+    key_mu = sym('mu%d',[ncp,1]);
+end
 key_q = dict_q(qactv_loop);
 key_phi = sym(zeros(ncpf,1));
 key_alp = sym(zeros(ncpf,1));
@@ -178,14 +205,23 @@ for i = 1:ncp % filter out the idx of used phi and alp
     end
 end
 
-X_key = [key_oc;...
-    key_quat;...
-    key_mu;...
-    key_q(:);...
-    key_phi(:);...
-    key_alp(:);...
-    key_pvec(:);...
-    key_c];
+if ~strcmp(object.type, 'sph')
+    X_key = [   key_oc;...
+                key_quat;...
+                key_mu;...
+                key_q(:);...
+                key_phi(:);...
+                key_alp(:);...
+                key_pvec(:);...
+                key_c];
+else
+    X_key = [   key_oc;...
+                key_q(:);...
+                key_phi(:);...
+                key_alp(:);...
+                key_pvec(:);...
+                key_c];
+end
 
 fprintf('Optimization variable initialized. Number of variables: %d\n', length(X0));
 
@@ -202,13 +238,15 @@ ub(1) = ub_x;
 ub(2) = ub_y;
 ub(3) = ub_z;
 
-lb(idx_quat) = -1;
-ub(idx_quat) = 1;
+if  ~strcmp(object.type, 'sph')
+    lb(idx_quat) = -1;
+    ub(idx_quat) = 1;
 
-% mu (projection of contact point on cylinder normal)
-% must lie within the cylinder (i.e. in [-0.5,0.5], mu=0 at the center)
-lb(idx_mu) = -0.4;
-ub(idx_mu) = 0.4;
+    % mu (projection of contact point on cylinder normal)
+    % must lie within the cylinder (i.e. in [-0.5,0.5], mu=0 at the center)
+    lb(idx_mu) = -0.4;
+    ub(idx_mu) = 0.4;
+end
 
 % Only guarantee that object must lie inside two link rmaps, but no limit
 % concerning the radius of object. E.g. distance between object center and
@@ -270,8 +308,10 @@ param.f_mu = f_mu; % coefficient of friction
 param.f_gamma = f_gamma; % coefficient of torsinal friction
 
 param.idx_oc = idx_oc;          % index of object center in X
-param.idx_quat = idx_quat;      % index of quaternion components pi in X
-param.idx_mu = idx_mu;          % index of mu (projection on contact point on X)
+if ~strcmp(object.type, 'sph')
+    param.idx_quat = idx_quat;      % index of quaternion components pi in X
+    param.idx_mu = idx_mu;          % index of mu (projection on contact point on X)
+end
 param.idx_q = idx_q;            % index of active joint angles q in X 
 param.idx_alp = idx_alp;        % index of cylindrical coordinates alp in X
 param.idx_phi = idx_phi;        % index of cyl. coord phi in X
@@ -295,7 +335,11 @@ if ~all(X0<=ub)
 end
 
 %% Nonlinear Constraints (Symbolic Expression)
+tic
 switch object.type
+    case 'sph'
+        [~,~,param] = sphNonLinIneqConst(hand, param);
+        [~,~,param] = sphNonLinEqConst(hand, param);
     case 'cyl'
         [~,~,param] = cylNonLinIneqConst(hand, param);
         [~,~,param] = cylNonLinEqConst(hand, param);
@@ -308,7 +352,8 @@ nonlcon = @(X)optGraspJS_nonlcon(X);
 %% Objective Function (Symbolic Expression)
 symObjectiveSingleGrasp(hand, param);
 objfun = @(X)optGraspJS_objfun(X);
-
+time_constraint = toc;
+param.time_constraint = time_constraint;
 %% Problem Configuration
 options = optimoptions('fmincon',...
     'Algorithm','sqp',...% 'active-set', 'interior-point', 'sqp', 'trust-region-reflective', or 'sqp-legacy'
@@ -324,8 +369,8 @@ disp('Starting fmincon...');
 
 tic;
 [X_sol,fval,exitflag,~] = fmincon(objfun, X0, A, b, Aeq, beq, lb, ub, nonlcon, options);
-toc;
-
+time_optimizer = toc;
+param.time_optimizer = time_optimizer;
 if exitflag<=0
     if_solution = false;
     tag(end+1:end+5) = 'false';

@@ -54,11 +54,11 @@ function [obj, obj_grad, ht_obj, ht_obj_grad] = symObjectiveSingleGrasp(hand, pa
     W = eye(numel(Q)); % cost weight matrix
     Cq = (Q(:).')*W*Q(:); % sum of square
 
-    %%% centter the contact points
-    Mu = X_key(param.idx_mu);
-    W_mu = 10*eye(numel(Mu));
-    Cmu = (Mu(:).'*W_mu*Mu(:));
-    
+%     %%% centter the contact points
+%     Mu = X_key(param.idx_mu);
+%     W_mu = 10*eye(numel(Mu));
+%     Cmu = (Mu(:).'*W_mu*Mu(:));
+%     
     %%% objective function
     eta = 0.5; % balance coefficient
     obj = eta*(Cfc + Ct) + (1-eta)*Cq;

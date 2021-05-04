@@ -6,10 +6,9 @@ param = soln.param;
 switch object.type
     case 'sph' % sphere
         oc = X_sol(param.idx_oc); % object center
-        To = trvec2tform(oc(:).');
-        radius = param.object_radius; % object radius
-        
-        object = mySGsphere(To,radius,object.clr);
+        transl = [oc(1);oc(2);oc(3)];
+        radius = param.obj.radius; % object radius
+        object = sphereObject(transl,radius,object.clr);
     case 'cyl' % cylinder
         cylParam.transl = X_sol(param.idx_oc);     % object center
         quat = X_sol(param.idx_quat);         % quaternion (already normalized)
@@ -31,7 +30,7 @@ switch object.type
         param.res = 20;
         param.sphereCenter = param.obj.relSphereCenter;
         param.sphereRadius = param.obj.sphereRadius;
-        object = compObj(param);
+        object = compObject(param);
         
         
     otherwise

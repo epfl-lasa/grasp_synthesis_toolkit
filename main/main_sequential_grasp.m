@@ -6,10 +6,10 @@ setup_path;
 setup_problem_config;
 
 %% Configuration of experiment
-recon.hand_model = true; % reconstruct hand models [TODO] remove this after changes applied
-recon.object_model = true; % reconstruct object models
-recon.rmap = false; % reconstruct reachability maps
-recon.os = true; % reconstruct opposition space
+recon.hand_model = false; % reconstruct hand models [TODO] remove this after changes applied
+recon.object_model = false; % reconstruct object models
+recon.rmap = true; % reconstruct reachability maps (keep true to resample after each grasp)
+recon.os = true;    % reconstruct opposition space (keep true to resample after each grasp)
 
 %% Create Hand Models
 if recon.hand_model && ~exist('hand','var')
@@ -29,37 +29,40 @@ else
     fprintf('\n[1] Hand model loaded.\n');
 end
 %% Create Object Models
-type = 'cyl'
-switch type
-    case 'cyl'
-        Param.radius = 14;
-        Param.height = 30;
-        Param.roll = 0;
-        Param.pitch = pi/2;
-        Param.yaw = 0;
-        % bad solution: roll = pi/8, pitch = pi/6, yaw = 0, os={[2,4],[3,4]}
-        Param.quat = quaternion([Param.yaw,Param.pitch,Param.roll],'euler', 'ZYX','frame');
-        Param.transl = [0;0;-60]; % translation
-        object = cylinderObj(Param);
-
-        mySGplotHand(hand);
-        plotCylinder(object,false);
-    case 'comp'
-        Param.radius = 15;
-        Param.height = 30;
-        Param.roll = 0;
-        Param.pitch = -pi/2;
-        Param.yaw = 0;
-        % bad solution: roll = pi/8, pitch = pi/6, yaw = 0, os={[2,4],[3,4]}
-        Param.quat = quaternion([Param.yaw,Param.pitch,Param.roll],'euler', 'ZYX','frame');
-        Param.transl = [0;0;-100]; % translation
-        
-        Param.sphereCenter = [0,0,25;0,0,-25];
-        Param.sphereRadius = [20,20];
-        object = compObj(Param);
-        mySGplotHand(hand);
-        plotCompObject(object,false);
-end
+% type = 'sph';
+% switch type
+%     case 'sph'
+%         Param.radius = 20;
+%         transl = [0;0;0];
+%         object = sphereObject(transl, Param.radius);
+%     case 'cyl'
+%         Param.radius = 14;
+%         Param.height = 30;
+%         Param.roll = 0; Param.pitch = pi/2; Param.yaw = 0;
+%         Param.quat = quaternion([Param.yaw,Param.pitch,Param.roll],'euler', 'ZYX','frame');
+%         Param.transl = [0;0;-60]; % translation
+%         object = cylinderObject(Param);
+% 
+%         plotCylinder(object,false);
+%     case 'comp'
+%         Param.radius = 15;
+%         Param.height = 30;
+%         Param.roll = 0; Param.pitch = -pi/2; Param.yaw = 0;
+%         Param.quat = quaternion([Param.yaw,Param.pitch,Param.roll],'euler', 'ZYX','frame');
+%         Param.transl = [0;0;-100]; % translation
+%         
+%         Param.sphereCenter = [0,0,25;0,0,-25];
+%         Param.sphereRadius = [20,20];
+%         object = compObject(Param);
+%         plotCompObject(object,false);
+% end
+load('spheres.mat')
+load('cylinders.mat')
+load('composites.mat');
+% shperes: 1: tennisball, 2: squash ball
+% cylinders: 1: R12H30, R10H50, R15H60
+% composite objects: hammer, dogbone
+object_list = {cylinders{1}, spheres{2}};
 %% Optimization
 
 % List of Opposition Space pairs, used as candidates for grasping.
@@ -80,7 +83,7 @@ end
 % comprises the ad-/abduction degrees of freedom on the bottom of the finger.
 % The last link is used to model another virtual link at finger tip for convenience.
 
-osList = {{[2,3],[3,3]}};%,...
+osList = {{[2,4],[3,4]},{[3,4],[0,0]}};%,...
 % successful simulations achieved for:
 % {[0,0],[2,4]} % radius: 10, height: 30
 % {[0,0],[3,4]} % radius: 18, height: 30
@@ -98,24 +101,25 @@ osList = {{[2,3],[3,3]}};%,...
 % {[2,2],[4,2]},...
 % {[2,2],[2,4]}};
 
+grasped_objects = {};
 for i = 1:numel(osList)
     fprintf('Experiment: %d\n', i);
     
     os_pair = osList{i};
-
+    object = object_list{i};
     file_title = ['single_grasp_'...
         '_F',num2str(os_pair{1}(1)),'L',num2str(os_pair{1}(2)),...
         '_F',num2str(os_pair{2}(1)),'L',num2str(os_pair{2}(2)),...
-        '_type_',object.type,'_r_',num2str(object.radius),'_h_',num2str(object.height)];
+        '_type_',object.type,'_r_',num2str(object.radius)];
     disp(file_title);
 
     % Solve grasping synthesis optimization problem
-    [hand, object, opt_soln, opt_cost, if_solution] = graspSingleCylinder(hand, object, recon, os_pair, false, false, file_title);
+    [hand, object, opt_soln, opt_cost, if_solution] = graspSingleCylinder(hand, object, recon, os_pair, true, false, file_title, grasped_objects);
 
     % Visualize and save results
     if if_solution
-        visualizeOptimizationConfig(hand, object, opt_soln.X_sol, opt_soln.param);
-        
+        grasped_objects{end+1} = object;
+        visualizeOptimizationConfig(hand, grasped_objects, opt_soln.X_sol, opt_soln.param);
         save(['../database/results/',file_title,'.mat']);
         savefig(['../database/results/',file_title,'.fig']);
     else
