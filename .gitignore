@@ -7,3 +7,5 @@ database/results/
 database/symbolic_functions/
 
 problem_config.mat
+*.mat
+database/problem_config.mat
