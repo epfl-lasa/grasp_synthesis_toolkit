@@ -6,10 +6,10 @@ setup_path;
 setup_problem_config;
 
 %% Configuration of experiment
-recon.hand_model = false; % reconstruct hand models [TODO] remove this after changes applied
+recon.hand_model = true; % reconstruct hand models [TODO] remove this after changes applied
 recon.object_model = true; % reconstruct object models
-recon.rmap = false; % reconstruct reachability maps
-recon.os = false; % reconstruct opposition space
+recon.rmap = true; % reconstruct reachability maps
+recon.os = true; % reconstruct opposition space
 
 %% Create Hand Models
 if recon.hand_model && ~exist('hand','var')
@@ -51,7 +51,9 @@ switch obj_type
 %         mySGplotHand(hand);
 %         plotCompObject(object,false);
 end
-nb_objects = 2;
+nb_objects = 10;
+object_type = 'sph';
+Param.radius = 20;
 object_list = create_object_list(obj_type, Param, nb_objects);
 fprintf("[2] Object list of type %s constructed.\n", obj_type);
 %% Optimization
@@ -93,14 +95,14 @@ os_list = {{[1,4],[2,3]},{[2,4],[3,4]},{[0,0],[2,4]}};%,...
 % {[2,2],[2,4]}};
 logfile_title = ['perf_eval_',obj_type,'_R_',num2str(object_list{1}.radius),'.csv'];
 logfile = fopen(logfile_title,'w');
-fprintf(logfile,'obj_type, os_1, os_2, obj_radius[mm], obj_height[mm], obj_value, time[s]\n');
+fprintf(logfile,'obj_type, os_1, os_2, obj_radius[mm], obj_height[mm], success, obj_value, constraint_time[s], optimization_time[s]\n');
 for i = 1:numel(os_list) % loop over os_pair
     os_pair = os_list{i};       % select the os_pair
     nb_errors = 0;
     obj_fun_value = zeros([1,numel(object_list)]);
     optimizer_time = zeros([1,numel(object_list)]);
     for j=1:numel(object_list)
-        experiment_cnt = (i-1)*j + j
+        experiment_cnt = (i-1)*j + j;
         fprintf('Experiment: %d\n', experiment_cnt);
         if experiment_cnt>1
             hand = reset_hand(); % reload the hand model, if previous runs exist
@@ -146,6 +148,12 @@ for i = 1:numel(os_list) % loop over os_pair
                 os_pair{1}(1),os_pair{1}(2),os_pair{2}(1),os_pair{2}(2),...
                 object.radius, object.height, success, opt_cost, constraint_time, optimizer_time);
         end
+        
+        %% Configuration of experiment
+        recon.hand_model = false; % reconstruct hand models [TODO] remove this after changes applied
+        recon.object_model = false; % reconstruct object models
+        recon.rmap = false; % reconstruct reachability maps
+        recon.os = false; % reconstruct opposition space
     end
 end
 fclose(logfile);

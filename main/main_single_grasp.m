@@ -84,7 +84,7 @@ end
 % comprises the ad-/abduction degrees of freedom on the bottom of the finger.
 % The last link is used to model another virtual link at finger tip for convenience.
 
-osList = {{[2,3],[3,3]}};%,...
+osList = {{[1,4],[2,2]}};%,...
 % successful simulations achieved for:
 % {[0,0],[2,4]} % radius: 10, height: 30
 % {[0,0],[3,4]} % radius: 18, height: 30

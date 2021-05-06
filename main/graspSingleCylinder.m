@@ -1,12 +1,12 @@
 function [hand, object, opt_soln, opt_cost, if_solution] = graspSingleCylinder(hand, object, recon, os_pair, if_plot, if_save, file_title, grasped_objects)
     
-    if nargin < 6
+    if nargin < 8
         grasped_objects = {};
     end
-    if nargin < 5
+    if nargin < 6
         if_save = false;
     end
-    if nargin < 4
+    if nargin < 5
         if_plot = false;
     end
     
