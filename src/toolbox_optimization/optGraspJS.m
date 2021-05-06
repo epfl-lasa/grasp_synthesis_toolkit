@@ -35,13 +35,13 @@ tag = '';
 ncpf = ncp; % number of contacts on fingers (exclude contact on palms)
 
 for i = 1:ncp
-    if ~all(os_info{i}) % palm is in the os list
+    [idx_f,idx_l] = deal(os_info{i}(1),os_info{i}(2));
+
+    if ispalm(idx_f) % palm is in the os list
         pactv = 1; % set palm as flag
         ncpf = ncpf - 1;
         tag(end+1) = 'P';
     else
-        [idx_f,idx_l] = deal(os_info{i}(1),os_info{i}(2));
-    
         nq_pre = min([idx_l, hand.F{idx_f}.n]); % number of joints ahead of idx_lnk, in case idx_lnk > finger.n (possible for fingertip link)
         q_idx = find(hand.qin == idx_f, 1); % first non-zero position (starting point index) of the indices of all joints of the finger in the hand
         
@@ -147,10 +147,10 @@ key_alp = sym(zeros(ncpf,1));
 key_pvec = [sym('vx');sym('vy')]; % translation vector of palm on surface
 
 for i = 1:ncp % filter out the idx of used phi and alp
-    if ~all(os_info{i})
+    [idx_f,idx_l] = deal(os_info{i}(1),os_info{i}(2)); % index of finger that establishes contact and link in the finger
+    if ispalm(idx_f)
         continue; % palm contact does not need alp and phi
     else
-        [idx_f,idx_l] = deal(os_info{i}(1),os_info{i}(2)); % index of finger that establishes contact and link in the finger
         key_phi(i) = dict_phi(idx_f, idx_l);
         key_alp(i) = dict_alp(idx_f, idx_l);
     end

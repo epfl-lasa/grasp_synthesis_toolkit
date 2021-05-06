@@ -65,13 +65,15 @@ for i = 1:nm
     % Iterate over all rmaps, rmap_i
     rmap_i = link_dict{i}.mesh; % (N,3)
     info_i = link_dict{i}.info; % (1,2)
+    [iF,iL] = deal(info_i(1),info_i(2));
     
     % Notice that Thumb 2nd link belongs to palm
     if (~strcmp(category_list{i},'P')) && size(rmap_i,1) == 1 % Skip virtual (singular) link (link length is 0)
         continue;
     end
 
-    if all(info_i) % Simplify link mesh only for non-palm links
+    if ispalm(iF) % Simplify link mesh only for non-palm links
+    else
         k_i = boundary(rmap_i);
         if numel(k_i) % k_i~=0, the convhull is not degenerated (palm is degenerated)
             rmap_i = [rmap_i(k_i(:,1),1), rmap_i(k_i(:,2),2), rmap_i(k_i(:,3),3)];
@@ -85,9 +87,11 @@ for i = 1:nm
         % opposition space with rmap_i
         rmap_j = link_dict{j}.mesh;
         info_j = link_dict{j}.info; % (1,2)
+        [jF,jL] = deal(info_j(1),info_j(2));
         
         % Extract data points on the boundary surface of the rmaps
-        if all(info_j)
+        if ispalm(jF)
+        else
             k_j = boundary(rmap_j);
             if numel(k_j) % k_j~=0, the convhull is not degenerated (palm is degenerated)
                 rmap_j = [rmap_j(k_j(:,1),1), rmap_j(k_j(:,2),2), rmap_j(k_j(:,3),3)];
@@ -101,7 +105,7 @@ for i = 1:nm
         min_dist = min(dist(:));
         
         if (min_dist<=d) && (max_dist>=d) % Criterion for deciding if two rmaps can intersect the object (min_dist<d), and if they have enough space to fit in the object when they widely open (max_dist>d)
-            % fprintf('Exist feasible opposition space: F%dL%d and F%dL%d.\n',info_i(1),info_i(2),info_j(1),info_j(2)); % F0L0 is palm
+            % fprintf('Exist feasible opposition space: F%dL%d and F%dL%d.\n',iF,iL,jF,jL); % F0L0 is palm
             if_exist = true;
             
             % existence_heatmap(i,j) = max_dist - min_dist; % use the maximum distance difference
@@ -113,7 +117,7 @@ for i = 1:nm
             OS{end+1} = data;
         else
             if_exist = false;
-            % fprintf('   No feasible opposition space: F%dL%d and F%dL%d.\n',info_i(1),info_i(2),info_j(1),info_j(2));
+            % fprintf('   No feasible opposition space: F%dL%d and F%dL%d.\n',iF,iL,jF,jL);
         end
         
         %% plotting all pairs of opposition spaces that can fit the object
@@ -157,7 +161,7 @@ for i = 1:nm
             
             axis equal; grid on;
             xlabel('X'); ylabel('Y'); zlabel('Z');
-            title(['F', num2str(info_i(1)), 'L', num2str(info_i(2)),' and F', num2str(info_j(1)), 'L', num2str(info_j(2))]);
+            title(['F', num2str(iF), 'L', num2str(iL),' and F', num2str(jF), 'L', num2str(jL)]);
             hold off;
         end
         clear('rmap_j');

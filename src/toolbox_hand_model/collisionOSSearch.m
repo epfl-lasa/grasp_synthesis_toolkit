@@ -66,27 +66,29 @@ existence_heatmap = zeros(N); % heatmap to save the number of collisions for eac
 for i = 1:N % this link, link_i
     rmap_i = link_dict{i}.rmap; % (N_samples,3)
     info_i = link_dict{i}.info; % (1,2)
-    
-    if all(info_i)
-        fprintf(' F%d L%d\n', info_i(1), info_i(2));
+    [iF, iL] = deal(info_i(1), info_i(2)); % iF: finger index, iL: link index
+
+    if ispalm(iF)
+    else
+        fprintf(' F%d L%d\n', iF, iL);
         k_i = boundary(rmap_i);
         if numel(k_i)
             rmap_i = [rmap_i(k_i(:,1),1), rmap_i(k_i(:,2),2), rmap_i(k_i(:,3),3)];
             rmap_i = unique(rmap_i,'rows');
             clear k_i;
         end
-    else
-        disp(' palm');
     end
 
     link_j_list = {}; % information of all link_j that collide with link_i
     for j = i+1:N % j: index of link that may collide with link i
         rmap_j = link_dict{j}.rmap;
         info_j = link_dict{j}.info;
+        [jF, jL] = deal(info_j(1), info_j(2)); % jF: finger index, jL: link index
         
         % Extract data points on the boundary surface of the rmaps to
         % accelerate computation
-        if all(info_j) % Simplify link mesh only if the link is not palm
+        if ispalm(jF) % Simplify link mesh only if the link is not palm
+        else
             k_j = boundary(rmap_j);
             if numel(k_j) % not degenerated
                 rmap_j = [rmap_j(k_j(:,1),1), rmap_j(k_j(:,2),2), rmap_j(k_j(:,3),3)];
@@ -108,10 +110,10 @@ for i = 1:N % this link, link_i
     end
     clear('rmap_i');
     
-    if all(info_i)
-        hand.F{info_i(1)}.Link{info_i(2)}.collList = link_j_list; % add to the 
-    else % palm
+    if ispalm(iF)
         hand.P.collList = link_j_list;
+    else
+        hand.F{iF}.Link{iL}.collList = link_j_list;
     end
     
     if nargout > 1
