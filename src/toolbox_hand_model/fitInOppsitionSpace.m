@@ -35,7 +35,9 @@ for f = 1:nf % iterate over fingers
         nl = length(f_rmap)-1; % number of links (incl. virtual links), ignore the last one (fingertip, not real link)
         for l = 1:nl
             l_rmap = f_rmap{l}; % l_map is a struct
-            if size(l_rmap.linkmesh,1) == 1 % skip virtual link (link length = 0, results in a singular rmap, e.g. the 1st link in the model is virtual)
+            if size(l_rmap.linkmesh,1) == 1 % skip degenerated link (link length = 0, results in a singular rmap, e.g. the 1st link in the model is virtual)
+                continue;
+            elseif ~hand.F{f}.Link{l}.is_real % skil virtual link
                 continue;
             else
                 link_dict{end+1} = struct('mesh',l_rmap.linkmesh,... % l_rmap, struct, has fields: p, r, n, linkmesh, cnvxIndices, bndryIndices
@@ -68,8 +70,13 @@ for i = 1:nm
     [iF,iL] = deal(info_i(1),info_i(2));
     
     % Notice that Thumb 2nd link belongs to palm
-    if (~strcmp(category_list{i},'P')) && size(rmap_i,1) == 1 % Skip virtual (singular) link (link length is 0)
-        continue;
+    if (~ispalm(iF))
+        if (size(rmap_i,1) == 1) % Skip links with degenerated map
+            continue;
+        end
+        if ~hand.F{iF}.Link{iL}.is_real % Skip virtual link
+            continue;
+        end
     end
 
     if ispalm(iF) % Simplify link mesh only for non-palm links
@@ -89,6 +96,15 @@ for i = 1:nm
         info_j = link_dict{j}.info; % (1,2)
         [jF,jL] = deal(info_j(1),info_j(2));
         
+        if (~ispalm(jF))
+            if (size(rmap_j,1) == 1) % Skip links with degenerated map
+                continue;
+            end
+            if ~hand.F{jF}.Link{jL}.is_real % Skip virtual link
+                continue;
+            end
+        end
+
         % Extract data points on the boundary surface of the rmaps
         if ispalm(jF)
         else
