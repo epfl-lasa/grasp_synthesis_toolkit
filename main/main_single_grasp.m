@@ -29,7 +29,7 @@ else
     fprintf('\n[1] Hand model loaded.\n');
 end
 %% Create Object Models
-type = 'sph';
+type = 'cyl';
 switch type
     case 'sph'
         Param.radius = 20;
@@ -44,7 +44,7 @@ switch type
         % bad solution: roll = pi/8, pitch = pi/6, yaw = 0, os={[2,4],[3,4]}
         Param.quat = quaternion([Param.yaw,Param.pitch,Param.roll],'euler', 'ZYX','frame');
         Param.transl = [0;0;-60]; % translation
-        object = cylinderObj(Param);
+        object = cylinderObject(Param);
 
         mySGplotHand(hand);
         plotCylinder(object,false);

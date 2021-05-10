@@ -20,7 +20,7 @@ switch object.type
         % projection of the contact points on central axis (check validity)
         mu = X_sol(param.idx_mu);
         
-        object = cylinderObj(cylParam,mu);
+        object = cylinderObject(cylParam,mu);
     case 'comp'
         param.transl = X_sol(param.idx_oc);
         param.height = param.obj.height;

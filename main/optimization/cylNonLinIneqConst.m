@@ -181,15 +181,15 @@ function [c, c_grad, param, ht_c, ht_c_grad] = cylNonLinIneqConst(hand, param)
                     [k_f,k_l] = deal(coll{k}(1),coll{k}(2));
                     if k_f == 0 
                         % constraint between finger link and palm
-                        % add constraints for both extremities of the link
-                        palm_point = hand.P.points_inr(1,:)'; % select a point on the inner hand surface
-                        palm_normal = hand.P.contact.symbolic.n; % palm normal
-                        % only check the link endpoints (palm is flat)
+                        
+                        % point on the inner palm surface
+                        palm_point = hand.P.points_inr(1,:)';
+                        palm_normal = hand.P.contact.symbolic.n;
+                        % only check for endpoints:
+                        % if no endpoints have enough distance to the palm,
+                        % then so do all the points on the finger link
                         dist_next = palm_normal.' * (x2 - palm_point);
                         c(end+1) = hand.hand_radius - dist_next;
-                        % this might be omitted probable [TODO]
-                        dist_this = palm_normal.' * (x1 - palm_point);
-                        c(end+1) = link_r - dist_this;
                         continue;
                     end
                     if k_f == idx_f % skip link on the same finger

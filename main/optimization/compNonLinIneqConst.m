@@ -210,14 +210,17 @@ function [c, c_grad, param, ht_c, ht_c_grad] = compNonLinIneqConst(hand, param)
                 for k = 1:numel(coll) % link k collides with current link
                     [k_f,k_l] = deal(coll{k}(1),coll{k}(2));
                     if k_f == 0
-                        palm_point = hand.P.points_inr(1,:).'; % point on the inner surface of the palm
+                        % intersection between links and the palm
+                        
+                        % palm_point: point on the inner palm surface
+                        palm_point = hand.P.points_inr(1,:).';
                         palm_normal = hand.P.contact.symbolic.n;
-                        % only check the link endpoints (palm is flat)
+                        % only check the link endpoints:
+                        % if the all (real) link endpoints don't intersect
+                        % with palm, then no point on the link does
                         dist_next = palm_normal.' * (x2 - palm_point);
                         c(end+1) = hand.hand_radius - dist_next;
-                        % this might be omitted probable [TODO]
-                        dist_this = palm_normal.' * (x1 - palm_point);
-                        c(end+1) = link_r - dist_this;
+
                         continue;
                     end
                     if k_f == idx_f % skip link on the same finger

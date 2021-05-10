@@ -121,15 +121,17 @@ function [c, c_grad, param, ht_c, ht_c_grad] = sphNonLinIneqConst(hand, param)
                 for k = 1:numel(coll) % link k collides with current link
                     [k_f,k_l] = deal(coll{k}(1),coll{k}(2));
                     if k_f ==0
-                        palm_point = hand.P.points_inr(1,:).'; % point on the inner surface of the palm
+                        % palm_point: point on the palm inner surface
+                        palm_point = hand.P.points_inr(1,:).';
                         palm_normal = hand.P.contact.symbolic.n;
                         % only check the link endpoints (palm is flat)
+                        % (if constraint is satisfied at all endpoints,
+                        % then there cannot be an intersection with any
+                        % finger and the palm)
                         dist_next = palm_normal.' * (x2 - palm_point);
-                        c(end+1) = hand.hand_radius - dist_next;
-                        % this might be omitted probable [TODO]
-                        dist_this = palm_normal.' * (x1 - palm_point);
-                        c(end+1) = link_r - dist_this;
-                        continue; % [TODO implemnt collision of finger and palm]
+                        c(end+1) = hand_r - dist_next;
+                        % [TODO] check if inner surface is at z=-5
+                        continue; 
                     end
                     if k_f == idx_f % skip link on the same finger
                         continue;
