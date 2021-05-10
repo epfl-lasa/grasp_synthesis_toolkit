@@ -6,7 +6,7 @@ setup_path;
 setup_problem_config;
 
 %% Configuration of experiment
-recon.hand_model = true; % reconstruct hand models [TODO] remove this after changes applied
+recon.hand_model = false; % reconstruct hand models [TODO] remove this after changes applied
 recon.object_model = true; % reconstruct object models
 recon.rmap = true; % reconstruct reachability maps
 recon.os = true; % reconstruct opposition space
@@ -29,7 +29,7 @@ else
     fprintf('\n[1] Hand model loaded.\n');
 end
 %% Create Object Models
-obj_type = 'comp';
+obj_type = 'sph';
 switch obj_type
     case 'sph'
         R = [20,32,10];
@@ -52,8 +52,8 @@ switch obj_type
 %         plotCompObject(object,false);
 end
 nb_objects = 10;
-object_type = 'sph';
-Param.radius = 20;
+%object_type = 'sph';
+%Param.radius = 20;
 object_list = create_object_list(obj_type, Param, nb_objects);
 fprintf("[2] Object list of type %s constructed.\n", obj_type);
 %% Optimization

@@ -6,10 +6,10 @@ setup_path;
 setup_problem_config;
 
 %% Configuration of experiment
-recon.hand_model = false; % reconstruct hand models [TODO] remove this after changes applied
+recon.hand_model = true; % reconstruct hand models [TODO] remove this after changes applied
 recon.object_model = false; % reconstruct object models
-recon.rmap = false; % reconstruct reachability maps
-recon.os = false; % reconstruct opposition space
+recon.rmap = true; % reconstruct reachability maps
+recon.os = true; % reconstruct opposition space
 
 %% Create Hand Models
 if recon.hand_model && ~exist('hand','var')
@@ -29,7 +29,7 @@ else
     fprintf('\n[1] Hand model loaded.\n');
 end
 %% Create Object Models
-type = 'cyl';
+type = 'sph';
 switch type
     case 'sph'
         Param.radius = 20;
@@ -84,7 +84,7 @@ end
 % comprises the ad-/abduction degrees of freedom on the bottom of the finger.
 % The last link is used to model another virtual link at finger tip for convenience.
 
-osList = {{[1,4],[2,2]}};%,...
+osList = {{[2,4],[3,4]}};%,...
 % successful simulations achieved for:
 % {[0,0],[2,4]} % radius: 10, height: 30
 % {[0,0],[3,4]} % radius: 18, height: 30

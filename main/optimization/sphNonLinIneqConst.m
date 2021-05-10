@@ -129,7 +129,7 @@ function [c, c_grad, param, ht_c, ht_c_grad] = sphNonLinIneqConst(hand, param)
                         % then there cannot be an intersection with any
                         % finger and the palm)
                         dist_next = palm_normal.' * (x2 - palm_point);
-                        c(end+1) = hand_r - dist_next;
+                        c(end+1) = link_r - dist_next;
                         % [TODO] check if inner surface is at z=-5
                         continue; 
                     end
