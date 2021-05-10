@@ -10,13 +10,13 @@ init;
 problem_configuration;
 
 %% Configuration of experiment
-recon.hand_model = true; % reconstruct hand models
+recon.hand_model = false; % reconstruct hand models
 recon.object_model = true; % reconstruct object models
-recon.rmap = true; % reconstruct reachability maps
+recon.rmap = false; % reconstruct reachability maps
 recon.os = true; % reconstruct opposition space
 
 %% Create Hand Models
-if recon.hand_model || ~exist('hand','var')
+if recon.hand_model
     disp('Generating hand model...');
     Th = eye(4);
     Th(1:3,4) = [0;0;0];
@@ -66,10 +66,11 @@ end
 % comprises the ad-/abduction degrees of freedom on the bottom of the finger.
 % The last link is used to model another virtual link at finger tip for convenience.
 
-osList = {{[1,4],[2,4]},...
+osList = {
+    {[1,4],[2,4]},...
+    {[2,2],[4,2]},...
     {[2,4],[3,4]},...
     {[2,3],[3,3]},...
-    {[2,2],[4,2]},...
     {[3,4],[0,0]},...
     {[2,2],[2,4]}};
 
@@ -77,7 +78,8 @@ for i = 1:numel(osList)
     fprintf('Experiment: %d\n', i);
     
     os_pair = osList{i};
-    object = TargetObjects{randi([1,numel(TargetObjects)])}; % pick up a random object from object lists
+    % object = TargetObjects{randi([1,numel(TargetObjects)])}; % pick up a random object from object lists
+    object = mySGsphere(eye(4), 20);
 
     file_title = ['single_grasp_'...
         '_F',num2str(os_pair{1}(1)),'L',num2str(os_pair{1}(2)),...

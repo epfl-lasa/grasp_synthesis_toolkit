@@ -10,11 +10,11 @@
 %     * OS.os_rmap: {1,nos}, length is the number of opposition space. Each component of os_rmap contains all rmap groups of one opposition spaces.
 %     * OS.os_info: {1,nos}, contains information of the link os_rmap within each opposition space
 
-function [OS, existence_heatmap] = fitInOppsitionSpace(rmap, object, if_plot_trial, if_save)
-if nargin < 4
+function [OS, existence_heatmap] = fitInOppsitionSpace(hand, object, rmap, if_plot_trial, if_save)
+if nargin < 5
     if_save = true;
 end
-if nargin < 3
+if nargin < 4
     if_plot_trial = false; % plot result of each feasible trial
 end
 

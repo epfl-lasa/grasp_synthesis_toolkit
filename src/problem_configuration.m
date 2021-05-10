@@ -26,12 +26,9 @@ epsilon = 1e-6; % numerical round-off error tolerance
 
 %% Configuration for optimization
 max_fun_evals = 100000;
-max_iter = 5000;
+max_iter = 10000;
 tol_fun = 1e-4;
-tol_x = 1e-6;
-
-%% Select constraints
-cstr.fc = true; % use force closure constraints
+tol_x = 1e-4;
 
 save([database_dir, '/problem_config.mat']);
 disp('* Updated problem config saved.');

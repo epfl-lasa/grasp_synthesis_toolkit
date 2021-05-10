@@ -97,11 +97,7 @@ pvec_ub = hand.P.pvec_ub(1:2);
 pvec_0 = (pvec_ub+pvec_lb)/2; % palm translation vector (from palm center), on palm surface local CF (2,1)
 
 %%% coefficients of force closure
-if cstr.fc
-    coeff_0 = ones(ncp*k,1)/(ncp*k); % friction cone coefficients, the friction cone on each contact point is approximated with k edges
-else
-    coeff_0 = [];
-end
+coeff_0 = ones(ncp*k,1)/(ncp*k); % friction cone coefficients, the friction cone on each contact point is approximated with k edges
 
 X0 = [objctr_0;... % (3,1), 1 : 3
     q_0(:);... % (nq_actv,1), 3+1 : 3+nq_actv
@@ -119,12 +115,8 @@ idx_phi = false(size(X0));  idx_phi(3+nq_actv +1 : 3+nq_actv +ncpf) = true;
 idx_alp = false(size(X0));  idx_alp(3+nq_actv+ncpf +1 : 3+nq_actv +2*ncpf) = true;
 idx_pvec = false(size(X0)); idx_pvec(3+nq_actv+2*ncpf +1 : 3+nq_actv+2*ncpf +2) = true;
 
-if cstr.fc % use force closure constraint
-    idx_coeff = false(size(X0));
-    idx_coeff(3+nq_actv+2*ncpf+2 +1 : 3+nq_actv+2*ncpf+2 +k*ncp) = true;
-else
-    idx_coeff = [];
-end
+idx_coeff = false(size(X0));
+idx_coeff(3+nq_actv+2*ncpf+2 +1 : 3+nq_actv+2*ncpf+2 +k*ncp) = true;
 
 %%% Construct key for variables
 % dictionary of all variables
@@ -132,12 +124,8 @@ dict_q = sym('q%d%d',[hand.n, hand.m/hand.n]); % notice that matlab expands colu
 dict_q = reshape(dict_q.',[],1);
 dict_phi = sym('phi%d%d',[hand.n, hand.m/hand.n]);
 dict_alp = sym('alp%d%d',[hand.n, hand.m/hand.n]);
-if cstr.fc
-    dict_coeff = sym('c%d%d',[ncp,k]);
-    key_c = reshape(dict_coeff.',[],1);
-else
-    key_c = [];
-end
+dict_coeff = sym('c%d%d',[ncp,k]);
+key_c = reshape(dict_coeff.',[],1);
 
 % Keys of parameters
 key_oc = [sym('x');sym('y');sym('z')];
@@ -207,14 +195,9 @@ A = [];
 b = [];
 
 %%% Linear Equality Aeq*X = beq
-if cstr.fc % only exist for force closure constraints
-    Aeq = zeros(1,length(X0));
-    Aeq(idx_coeff) = 1; % sum over c_i is 1
-    beq = 1;
-else
-    Aeq = [];
-    beq = [];
-end
+Aeq = zeros(1,length(X0));
+Aeq(idx_coeff) = 1; % sum over c_i is 1
+beq = 1;
 
 %%% Input parameters for optimization problems
 param.os = os; % saves list of (finger,link) information for opposition space
@@ -238,7 +221,6 @@ param.dict_q = dict_q;
 
 param.pactv = pactv; % palm active
 param.qactv_loop = qactv_loop; % active joints being used in this optimization problem loop
-param.cstr = cstr;
 
 if ~all(X0>=lb)
     warning('X0 exceeds lower bounds.');

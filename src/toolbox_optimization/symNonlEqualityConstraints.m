@@ -5,7 +5,6 @@ function [ceq, ceq_grad, param, ht_ceq, ht_ceq_grad] = symNonlEqualityConstraint
     r = param.object_radius; % object radius
     k = param.k; % number of edges of approximated friction cone
     X_key = param.X_key;
-    cstr = param.cstr;
     oc = [sym('x');sym('y');sym('z')]; % object center
     
     fprintf('\nConstructing Nonl. Equality Constraints: \n');
@@ -45,33 +44,32 @@ function [ceq, ceq_grad, param, ht_ceq, ht_ceq_grad] = symNonlEqualityConstraint
     % Equality Constraint 3: Force closure
     % Coefficients times wrench cone edges, sum up to 0(6,1)
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    if cstr.fc
-        fprintf('* Force closure: ');
-        W = sym(zeros(6,ncp*k)); % A list to save all wrenches
-        c = sym('c%d%d',[ncp,k]); % coefficients of friction cone edges in solving the linear programming problem
-        c = reshape(c.',[],1);
-        for i = 1:ncp
-            [idx_f,idx_l] = deal(os_info{i}(1),os_info{i}(2));
-            if ispalm(idx_f) % palm
-                FC_i = hand.P.contact.symbolic.FC;
-                TC_i = hand.P.contact.symbolic.TC;
-            else
-                finger = hand.F{idx_f};
-                link = finger.Link{idx_l};
+    fprintf('* Force closure: ');
+    W = sym(zeros(6,ncp*k)); % A list to save all wrenches
+    c = sym('c%d%d',[ncp,k]); % coefficients of friction cone edges in solving the linear programming problem
+    c = reshape(c.',[],1);
+    for i = 1:ncp
+        [idx_f,idx_l] = deal(os_info{i}(1),os_info{i}(2));
+        if ispalm(idx_f) % palm
+            FC_i = hand.P.contact.symbolic.FC;
+            TC_i = hand.P.contact.symbolic.TC;
+        else
+            finger = hand.F{idx_f};
+            link = finger.Link{idx_l};
 
-                rho_sym = ['rho',num2str(idx_f),num2str(idx_l)];
+            rho_sym = ['rho',num2str(idx_f),num2str(idx_l)];
 
-                FC_i = link.contact.symbolic.FC; % (3,k)
-                FC_i = subs(FC_i, {'L','r',rho_sym}, {link.L,r,link.radius});
+            FC_i = link.contact.symbolic.FC; % (3,k)
+            FC_i = subs(FC_i, {'L','r',rho_sym}, {link.L,r,link.radius});
 
-                TC_i = link.contact.symbolic.TC; % (3,k)
-                TC_i = subs(TC_i, {'L','r',rho_sym}, {link.L,r,link.radius});
-            end
-            W_i = cat(1,FC_i,TC_i); % (6,k) construct wrench vector
-            W(:,(i-1)*k+1:i*k) = W_i; % (6,ncp*k) stack wrenches from this contact point to the entire wrench
+            TC_i = link.contact.symbolic.TC; % (3,k)
+            TC_i = subs(TC_i, {'L','r',rho_sym}, {link.L,r,link.radius});
         end
-        ceq(end+1:end+6) = W*c;
+        W_i = cat(1,FC_i,TC_i); % (6,k) construct wrench vector
+        W(:,(i-1)*k+1:i*k) = W_i; % (6,ncp*k) stack wrenches from this contact point to the entire wrench
     end
+    ceq(end+1:end+6) = W*c;
+
     ceq_idx(end+1) = numel(ceq)-sum(ceq_idx);
     ceq_name{end+1} = 'Force closure';
     fprintf('%d\n', ceq_idx(end));
