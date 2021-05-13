@@ -16,7 +16,7 @@ if nargin < 4
     nps = 5; % nps is the resolution of sphere (joint model)
 end
 if nargin < 3
-    radius = 5; % radius of sphere (joint model)
+    radius = hand.hand_radius; % radius of sphere (joint model)
 end
 
 T = hand.T;
