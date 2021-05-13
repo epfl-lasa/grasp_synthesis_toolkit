@@ -81,10 +81,12 @@ for i = 1:nm
 
     if ispalm(iF) % Simplify link mesh only for non-palm links
     else
-        k_i = boundary(rmap_i);
-        if numel(k_i) % k_i~=0, the convhull is not degenerated (palm is degenerated)
-            rmap_i = [rmap_i(k_i(:,1),1), rmap_i(k_i(:,2),2), rmap_i(k_i(:,3),3)];
-            rmap_i = unique(rmap_i,'rows');
+        assert(size(rmap_i,2)==3);
+        k_i = boundary(rmap_i,1.0); % (N,3), 0: convex hull; default shrink factor S=0.5
+        if ~isempty(k_i) % k_i~=0, the convhull is not degenerated (palm is degenerated)
+            uniqueIdx = unique(k_i(:));
+            rmap_i = rmap_i(uniqueIdx,:);
+            rmpa_i = unique(rmap_i,'rows');
             clear k_i;
         end
     end
@@ -108,9 +110,11 @@ for i = 1:nm
         % Extract data points on the boundary surface of the rmaps
         if ispalm(jF)
         else
-            k_j = boundary(rmap_j);
-            if numel(k_j) % k_j~=0, the convhull is not degenerated (palm is degenerated)
-                rmap_j = [rmap_j(k_j(:,1),1), rmap_j(k_j(:,2),2), rmap_j(k_j(:,3),3)];
+            assert(size(rmap_j,2)==3);
+            k_j = boundary(rmap_j,1.0); % (N,3), 0: convex hull; default shrink factor S=0.5
+            if ~isempty(k_j) % k_i~=0, the convhull is not degenerated (palm is degenerated)
+                uniqueIdx = unique(k_j(:));
+                rmap_j = rmap_j(uniqueIdx,:);
                 rmap_j = unique(rmap_j,'rows');
                 clear k_j;
             end
