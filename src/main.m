@@ -26,11 +26,11 @@ if recon.hand_model
     hand = mySGallegroLeft(Th);
     
     save('../database/models.mat', 'hand');
-    fprintf('\n[1] Hand model constructed and saved.\n');
+    fprintf('\n[1] Hand model constructed and saved: %s.\n', hand.type);
 else
     models = load('models.mat');
     hand = models.hand;
-    fprintf('\n[1] Hand model loaded.\n');
+    fprintf('\n[1] Hand model loaded: %s.\n', hand.type);
 end
 
 %% Create Object Models
