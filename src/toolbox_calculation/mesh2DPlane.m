@@ -46,7 +46,7 @@ Pm = Pm_src_h(1:3,:); % (3,N)
 Pm = transpose(Pm);
 
 if nargout > 1
-    k = boundary(Ptgt(:,1),Ptgt(:,2)); % this k should be a vector, since the plane is degenerated
+    k = boundary(Ptgt(:,1),Ptgt(:,2),1.0); % this k should be a vector, since the plane is degenerated
 end
 if nargout > 2
     k_ch = convhull(Ptgt(:,1),Ptgt(:,2));

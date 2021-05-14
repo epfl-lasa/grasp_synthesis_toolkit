@@ -71,9 +71,10 @@ for i = 1:N % this link, link_i
     if ispalm(iF)
     else
         fprintf(' F%d L%d\n', iF, iL);
-        k_i = boundary(rmap_i);
-        if numel(k_i)
-            rmap_i = [rmap_i(k_i(:,1),1), rmap_i(k_i(:,2),2), rmap_i(k_i(:,3),3)];
+        k_i = boundary(rmap_i,1.0); % (N,3), 0: convex hull; default shrink factor S=0.5
+        if ~isempty(k_i)
+            uniqueIdx = unique(k_i(:));
+            rmap_i = rmap_i(uniqueIdx,:);
             rmap_i = unique(rmap_i,'rows');
             clear k_i;
         end
@@ -89,9 +90,10 @@ for i = 1:N % this link, link_i
         % accelerate computation
         if ispalm(jF) % Simplify link mesh only if the link is not palm
         else
-            k_j = boundary(rmap_j);
-            if numel(k_j) % not degenerated
-                rmap_j = [rmap_j(k_j(:,1),1), rmap_j(k_j(:,2),2), rmap_j(k_j(:,3),3)];
+            k_j = boundary(rmap_j,1.0); % (N,3), 0: convex hull; default shrink factor S=0.5
+            if ~isempty(k_j)
+                uniqueIdx = unique(k_j(:));
+                rmap_j = rmap_j(uniqueIdx,:);
                 rmap_j = unique(rmap_j,'rows');
                 clear k_j;
             end

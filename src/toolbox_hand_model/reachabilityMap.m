@@ -126,11 +126,12 @@ function [map_hand, robot] = reachabilityMap(robot, fngrs2spl, if_plot, if_save)
             linkmesh = unique(linkmesh, 'rows'); % (N,3), keep only the unique values
             
             try % in case dataset degenerates and convex hull does not exist
-                [k,~] = boundary(linkmesh); % Use boundary, not convex hull. Set last input to 0 to use convex hull. default: 0.5
+                [k,~] = boundary(linkmesh,1.0); % Use boundary, not convex hull. Set last input to 0 to use convex hull. default: 0.5
                 [k_ch,~] = convhulln(linkmesh); % Use convex hull
 
+                uniqueIdx = unique(k(:));
                 assert(size(linkmesh,2)==3);
-                linkmesh = [linkmesh(k(:,1),1), linkmesh(k(:,2),2), linkmesh(k(:,3),3)];
+                linkmesh = linkmesh(uniqueIdx,:);
                 linkmesh = unique(linkmesh, 'rows');
 
             catch % k or k_ch is empty
