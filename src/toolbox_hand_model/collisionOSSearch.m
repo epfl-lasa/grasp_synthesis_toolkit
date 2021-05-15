@@ -70,6 +70,9 @@ for i = 1:N % this link, link_i
 
     if ispalm(iF)
     else
+        if ~hand.F{iF}.Link{iL}.is_real
+            continue;
+        end
         fprintf(' F%d L%d\n', iF, iL);
         k_i = boundary(rmap_i,1.0); % (N,3), 0: convex hull; default shrink factor S=0.5
         if ~isempty(k_i)
@@ -81,7 +84,7 @@ for i = 1:N % this link, link_i
     end
 
     link_j_list = {}; % information of all link_j that collide with link_i
-    for j = i+1:N % j: index of link that may collide with link i
+    for j = 1:N % j: index of link that may collide with link i
         rmap_j = link_dict{j}.rmap;
         info_j = link_dict{j}.info;
         [jF, jL] = deal(info_j(1), info_j(2)); % jF: finger index, jL: link index
@@ -90,6 +93,9 @@ for i = 1:N % this link, link_i
         % accelerate computation
         if ispalm(jF) % Simplify link mesh only if the link is not palm
         else
+            if ~hand.F{jF}.Link{jL}.is_real
+                continue;
+            end
             k_j = boundary(rmap_j,1.0); % (N,3), 0: convex hull; default shrink factor S=0.5
             if ~isempty(k_j)
                 uniqueIdx = unique(k_j(:));
@@ -129,7 +135,8 @@ hand.collision_map = 'true'; % set flag
 %%% plot overview of existence
 if if_plot
     figure;
-    heatmap(existence_heatmap,...
+    triu_existence = triu(existence_heatmap); % Only plot upper triangular matrix
+    heatmap(triu_existence,...
         'XData',category_list,...
         'YData',category_list);
     title(['Cartesian-space collision between links (r: ', num2str(hand_radius), ')']);
