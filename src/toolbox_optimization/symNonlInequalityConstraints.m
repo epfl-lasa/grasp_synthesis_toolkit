@@ -35,6 +35,7 @@ function [c, c_grad, param, ht_c, ht_c_grad] = symNonlInequalityConstraints(hand
     for i = 1:ncp
         [idx_f, idx_l] = deal(os_info{i}(1),os_info{i}(2)); % index of finger and link
         if ispalm(idx_f)
+            continue;
         else
             % Collision with palm is guaranteed in 'Collision avoidance (object vs. palm)'
             finger = hand.F{idx_f};
@@ -181,9 +182,16 @@ function [c, c_grad, param, ht_c, ht_c_grad] = symNonlInequalityConstraints(hand
                 if ~link.is_real
                     continue;
                 end
+
+                try
+                    coll = link.collList; % retrieve the links that collide with the current one
+                catch
+                    fprintf('  Finger: %d, Link: %d does not have collision list.\n', idx_f, j);
+                    continue;
+                end
+
                 x1 = link.symbolic.HT_this(1:3,4); % end points of current link
                 x2 = link.symbolic.HT_next(1:3,4);
-                coll = link.collList; % retrieve the links that collide with the current one
 
                 for k = 1:numel(coll) % link k collides with current link
                     [k_f,k_l] = deal(coll{k}(1),coll{k}(2));

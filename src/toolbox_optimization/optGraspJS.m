@@ -8,7 +8,6 @@ function [X_sol, fval, param, if_solution] = optGraspJS(hand, object, os, graspe
 % grasped_objects: contains list of objects that have been grasped. these
 % objects are used in InequalityConstraints (collision avoidance between target object and grasped objects)
 
-
 if nargin < 6
     if_save_trial = false;
 end
