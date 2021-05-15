@@ -169,19 +169,21 @@ function [c, c_grad, param, ht_c, ht_c_grad] = cylNonLinIneqConst(hand, param)
             nq_pre = min([idx_l, finger.nlink-1]); % number of joints ahead of idx_lnk, in case idx_lnk > finger.n (possible for fingertip link). max(finger.n) = 4
 
             for j = 1:nq_pre % Iterate over the current link + all father-links on this finger
-                link = finger.Link{j}; % link j, The link being checked at this moment
                 if ~link.is_real
                     continue;
                 end
+                link = finger.Link{j}; % link j, The link being checked at this moment
                 x1 = link.symbolic.HT_this(1:3,4); % end points of current link
                 x2 = link.symbolic.HT_next(1:3,4);
                 coll = link.collList; % retrieve the links that collide with the current one
 
                 for k = 1:numel(coll) % link k collides with current link
                     [k_f,k_l] = deal(coll{k}(1),coll{k}(2));
+                    if k_f == idx_f % skip link on the same finger
+                        continue;
+                    end
                     if k_f == 0 
                         % constraint between finger link and palm
-                        
                         % point on the inner palm surface
                         palm_point = hand.P.points_inr(1,:)';
                         palm_normal = hand.P.contact.symbolic.n;
@@ -192,9 +194,7 @@ function [c, c_grad, param, ht_c, ht_c_grad] = cylNonLinIneqConst(hand, param)
                         c(end+1) = hand.hand_radius - dist_next;
                         continue;
                     end
-                    if k_f == idx_f % skip link on the same finger
-                        continue;
-                    end
+
 
                     link_coll = hand.F{k_f}.Link{k_l}; % link to collide with current link
                     if ~link_coll.is_real

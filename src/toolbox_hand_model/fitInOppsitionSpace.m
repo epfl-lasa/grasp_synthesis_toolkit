@@ -190,19 +190,21 @@ for i = 1:nm
 end
 
 %%% plot overview of existence
+if if_plot_trial
 figure;
-heatmap(existence_heatmap,...
-    'XData',category_list,...
-    'YData',category_list);
-title(['Existence of Opposition Space (r: ', num2str(object.radius), ')']);
-xlabel('Finger-Link pair');
-ylabel('Finger-Link pair');
-set(gca, 'FontSize', 14);
+    heatmap(existence_heatmap,...
+        'XData',category_list,...
+        'YData',category_list);
+    title(['Existence of Opposition Space (r: ', num2str(object.radius), ')']);
+    xlabel('Finger-Link pair');
+    ylabel('Finger-Link pair');
+    set(gca, 'FontSize', 14);
 
-fprintf('[fitInOppsitionSpace] Total number of opposition spaces: %d\n', length(OS));
-saveas(gca, ['../database/results/os_heatmap_',num2str(object.radius),'.jpg'], 'jpeg');
-saveas(gca, ['../database/results/os_heatmap_',num2str(object.radius),'.eps'], 'epsc');
+    fprintf('[fitInOppsitionSpace] Total number of opposition spaces: %d\n', length(OS));
+    saveas(gca, ['../database/results/os_heatmap_',num2str(object.radius),'.jpg'], 'jpeg');
+    saveas(gca, ['../database/results/os_heatmap_',num2str(object.radius),'.eps'], 'epsc');
 % close gcf;
+end
 
 if if_save
     save(['../database/opposition_space_',num2str(object.radius),'.mat'],'OS');

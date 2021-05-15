@@ -1,4 +1,4 @@
-function [hand, object, opt_soln, opt_cost, if_solution] = graspSingleCylinder(hand, object, recon, os_pair, if_plot, if_save, file_title, grasped_objects)
+function [hand, object, opt_soln, opt_cost, if_solution] = graspSingleObject(hand, object, recon, os_pair, if_plot, if_save, file_title, grasped_objects)
     
     if nargin < 8
         grasped_objects = {};
@@ -34,7 +34,7 @@ function [hand, object, opt_soln, opt_cost, if_solution] = graspSingleCylinder(h
     %% Step 2: Construct collision map
     if recon.os || ~isfield(hand,'collision_map')
         disp('Constructing collision map...');
-        hand = collisionOSSearch(hand); % collision opposition space
+        hand = collisionOSSearch(hand, rmap, if_plot); % collision opposition space
         save('../database/models.mat', 'hand');
         disp('Hand model updated: link collision map');
     end
@@ -42,7 +42,7 @@ function [hand, object, opt_soln, opt_cost, if_solution] = graspSingleCylinder(h
     %% Step 3: Filter potential feasible opposition spaces for grasping
     if recon.os || ~isfile(['../database/opposition_space_',num2str(object.radius),'.mat'])
         disp('Searching for potential opposition space...');
-        OS = fitInOppsitionSpace(rmap, object, false);
+        OS = fitInOppsitionSpace(hand, object, rmap, if_plot);
         fprintf('\n[4] Opposition space constructed.\n');
     else
         os_data = load(['opposition_space_',num2str(object.radius),'.mat']);
@@ -63,7 +63,7 @@ function [hand, object, opt_soln, opt_cost, if_solution] = graspSingleCylinder(h
 
         fprintf('  Opp. Space: F%dL%d and F%dL%d\n', os.os_info{1}(1),os.os_info{1}(2),os.os_info{2}(1),os.os_info{2}(2));
 
-        [X_sol, Cost, param, if_trial_success] = optGraspCyl(hand, object, os, grasped_objects); % This is the main function for optimal grasping synthesis
+        [X_sol, Cost, param, if_trial_success] = optGraspObject(hand, object, os, grasped_objects); % This is the main function for optimal grasping synthesis
 
         if if_trial_success
             costList(end+1) = Cost;

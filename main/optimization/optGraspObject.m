@@ -2,7 +2,7 @@
 % Objective function: grasp quality measure
 % Optimization variable: joints
 
-function [X_sol, fval, param, if_solution] = optGraspCyl(hand, object, os, grasped_objects, if_plot_trial, if_save_trial)
+function [X_sol, fval, param, if_solution] = optGraspObject(hand, object, os, grasped_objects, if_plot_trial, if_save_trial)
 % os_rmap: list of structures, contain only affected opposition spaces in desired grasp
 % if_save: if save the optimization results
 % grasped_objects: contains list of objects that have been grasped. these

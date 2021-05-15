@@ -29,15 +29,15 @@ else
     fprintf('\n[1] Hand model loaded.\n');
 end
 %% Create Object Models
-type = 'sph';
+type = 'cyl';
 switch type
     case 'sph'
-        Param.radius = 20;
+        Param.radius = 10;
         transl = [0;0;0];
         object = sphereObject(transl, Param.radius);
     case 'cyl'
         Param.radius = 14;
-        Param.height = 30;
+        Param.height = 50;
         Param.roll = 0;
         Param.pitch = pi/2;
         Param.yaw = 0;
@@ -115,7 +115,7 @@ for i = 1:numel(osList)
     disp(file_title);
 
     % Solve grasping synthesis optimization problem
-    [hand, object, opt_soln, opt_cost, if_solution] = graspSingleCylinder(hand, object, recon, os_pair, false, false, file_title);
+    [hand, object, opt_soln, opt_cost, if_solution] = graspSingleObject(hand, object, recon, os_pair, false, false, file_title);
 
     % Visualize and save results
     if if_solution

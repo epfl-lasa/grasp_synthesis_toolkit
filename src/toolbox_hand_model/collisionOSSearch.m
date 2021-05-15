@@ -86,7 +86,7 @@ for i = 1:N % this link, link_i
     for j = 1:N % j: index of link that may collide with link i
         rmap_j = link_dict{j}.rmap;
         info_j = link_dict{j}.info;
-        [jF, jL] = deal(info_j(1), info_j(2)); % jF: finger index, jL: link index
+        [jF, ~] = deal(info_j(1), info_j(2)); % jF: finger index, jL: link index
 
         % Extract data points on the boundary surface of the rmaps to
         % accelerate computation
