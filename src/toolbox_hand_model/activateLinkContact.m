@@ -16,7 +16,7 @@ switch nargin
     
     case 3 % activate one link on the specified finger
         % determine the index of joints on the link base
-        if ~idx_f || ~idx_l % palm
+        if ispalm(idx_f) % palm
             hand.pavtc = 1;
         else
             hand.F{idx_f}.Link{idx_l}.lactv = 1;
@@ -34,7 +34,7 @@ switch nargin
         end
         
     case 2 % activate one entire finger
-        if ~idx_f % palm
+        if ispalm(idx_f) % palm
             hand.pavtc = 1;
         else
             for idx_l = 1:numel(hand.F{idx_f}.Link)

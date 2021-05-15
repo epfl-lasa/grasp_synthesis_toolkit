@@ -1,11 +1,11 @@
 %    SGplotLink_allegro - Plots a link of the Allegro Hand structure
 %
-%    The function plots a clindrical link of the hand structure
+%    The function plots a cylindrical link of the hand structure
 %
 %    Usage: h = SGplotLink_allegro(p1,p2,r)
 %
 %    Arguments:
-%    p1 = the intial point of the link
+%    p1 = the initial point of the link
 %    p2 = the final point of the link
 %    r = the radius of the link 
 %    transp = parameter representing surface transparency
@@ -53,12 +53,12 @@
 function mySGplotLink_allegro(p1,p2,r,transp,color)
 rc = r(1);
 rt = r(2);
-% link lenght
+% link length
 l = norm(p2-p1)-rc;
 vers = (p2-p1)/norm(p1-p2);
 p3 = p1+vers*(l);
 
-% cilinder of radius r
+% cylinder of radius r
 [xc,yc,zc]= cylinder(rc,20);
 
 zc = l*zc;

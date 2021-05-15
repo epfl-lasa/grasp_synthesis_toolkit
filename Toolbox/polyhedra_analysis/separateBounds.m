@@ -10,7 +10,7 @@ function [A,b,Aeq,beq,lb,ub,report] = separateBounds( A,b,Aeq,beq,tol )
 %constraints corresponding to simple upper and lower bounds. It will then
 %separate these constraints from the rest, expressing them instead using
 %vectors lb, ub. The "report" output argument is a structure containing
-%some relevnt stats,
+%some relevant stats,
 %
 %    report.infeasibleBounds: indices, i, of any lb(i)>ub(i)
 %    report.inequalitiesRemoved: indices of rows removed from A,b
@@ -78,7 +78,7 @@ function [A,b,Aeq,beq,lb,ub,report] = separateBounds( A,b,Aeq,beq,tol )
 %
 %        max(abs(A(:,i)))>=tol*sum(abs(A(i,:)))
 %
-%The default beavior corresponds to tol=1.
+%The default behavior corresponds to tol=1.
 
 
   %%%%begin parsing

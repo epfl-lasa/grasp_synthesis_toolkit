@@ -1,4 +1,4 @@
-function hand = makePalm(hand,radius,nps)
+function hand = makePalm(hand)
 % Construct the model of hand palm. Currently support:
 % 20dof human hand (mySGparadigmatic)
 % Modified from 'mySGplotPalm'.
@@ -6,18 +6,20 @@ function hand = makePalm(hand,radius,nps)
 %   X: points of constructing the palm
 %   k: the convex hull constructed by the points X
 
-param = load('problem_config.mat','Sp','k','f_gamma');
+try
+    param = load('problem_config.mat','Sp','k','f_gamma');
+catch
+    warning('Need to run problem configuration first.');
+    problem_configuration;
+end
+
 k = param.k;
 f_gamma = param.f_gamma;
 Sp = sym(param.Sp);
 x0 = [sym('x');sym('y');sym('z')]; % sym of object center
 
-if nargin < 4
-    nps = 5; % nps is the resolution of sphere (joint model)
-end
-if nargin < 3
-    radius = hand.hand_radius; % radius of sphere (joint model)
-end
+nps = 5; % nps is the resolution of sphere (joint model)
+radius = hand.hand_radius; % radius of sphere (joint model)
 
 T = hand.T;
 F = hand.F;
@@ -30,16 +32,6 @@ palm_base = T*[0 -1 0 0;... % World to palm base
     1 0 0 0;
     0 0 1 0;
     0 0 0 1];
-
-%%% Calculate the fourth vertex of the parallelogram
-%{
-switch hand_type
-    case 'mySGparadigmatic' % This is a RIGHT hand
-        ;
-    case 'AllegroHandLeft'
-        ;
-end
-%}
 
 %%% NOTICE: FINGERS MUST BE ORDERED IN SEQUENCE: T,I,M,R,L
 % thumb_base = F{1}.base(1:3,4); % base of thumb
@@ -59,7 +51,7 @@ P.palm_ctr = palm_ctr;
 basepoints = [TL,TR,BR,BL]; % (3,N)
 basepoints_h = cat(1,basepoints,ones(1,size(basepoints,2))); % homogeneous coordinates, (4,n+1)
 
-bp = basepoints';
+bp = basepoints.';
 co = mean(bp);
 for i = 1:size(bp,1)
     ncp(i,:) = (co - bp(i,:))/norm(co - bp(i,:));
@@ -77,11 +69,11 @@ for i = 1:size(bp,1)
 end
 
 %%% 3D palm
-X = unique(X,'rows');
-[K,V] = convhulln(X); % The convex hull of palm
-P.X = X;
-P.K = K;
-P.V = V; % volume
+% X = unique(X,'rows');
+% [K,V] = convhulln(X); % The convex hull of palm
+% P.X = X;
+% P.K = K;
+% P.V = V; % volume
 
 %%% From palm center to inner surface center
 HTctr2inr = trvec2tform([0,0,-1]*radius); % reference frame on the front surface of the palm. pointing to the Z- direction, translation for d = radius
@@ -95,7 +87,7 @@ H = eye(4)
 First step, from world transfer to hand CF (left product: w.r.t. world CF)
 H = T*eye(4)
 Second, from hand CF to front surface of palm (right prod.: w.r.t. current CF)
-H = T*eye(4)*HT2inr
+H = T*eye(4)*HTctr2inr
 
 Thus, the following equation holds:
 points_inr = H * {F{i}.base, i = 1,...,nf}
@@ -104,8 +96,8 @@ Since: basepoints_h{:,i} = T * F{i}.base;
 Thus: {F{i}.base, i = 1,...,nf} = inv(T)*basepoints_h{:,i}
 
 To summary:
-points_inr = T * eye(4) * HT2inr * inv(T) * basepoints_h{:,i}
-points_inr = T * HT2inr * inv(T) * basepoints_h{:,i}
+points_inr = T * eye(4) * HTctr2inr * inv(T) * basepoints_h{:,i}
+points_inr = T * HTctr2inr * inv(T) * basepoints_h{:,i}
 %}
 
 points_inr = T * HTctr2inr * inv(T) * basepoints_h; % transfer w.r.t. current coordinate frame
@@ -118,9 +110,9 @@ R = HTctr2inr(1:3,1:3);
 t = HTctr2inr(1:3,4); % translation vector, from palm base to palm inner surface
 ctr_inr = t + R*Ctr(:);
 
-S_inr = calcPolygonArea(points_inr,ctr_inr); % Notice that points in points_inr must be ordered in clockwise or anti-clockwise order
+% S_inr = calcPolygonArea(points_inr,ctr_inr); % Notice that points in points_inr must be ordered in clockwise or anti-clockwise order
+% P.S_inr = S_inr; % S_inr: inner surface area, is used to check the 'inside-convex hull' constraints later
 
-P.S_inr = S_inr; % S_inr: inner surface area, is used to check the 'inside-convex hull' constraints later
 P.points_inr = points_inr; % vertices of inner area
 P.HTbase2inr = HTbase2inr;
 P.ctr_inr = ctr_inr; % palm inner surface center
@@ -154,7 +146,7 @@ norm_vtx = bsxfun(@minus, points_inr, ctr_inr(:).'); % (N,3), normalized vertice
 % P.pvec_lb = min(norm_vtx,[],1);
 
 %%% calculate the upper bound and lower bound of pvec. noticed that pvec is
-%%% defined in the palm inner surface reference frame insead of world
+%%% defined in the palm inner surface reference frame instead of world
 %%% reference frame, so vx along the short axis, vy the longer one
 
 norm_vtx_palm = transpose(palm_base(1:3,1:3) * norm_vtx.'); % represent the bounds limits from world coordinate frame to local palm CF to match the definition of p = [vx,vy]
@@ -173,15 +165,13 @@ P.contact.symbolic.TC = TC;
 
 vn_i = -d; % (3,1) % from contact point, pointing towards object center
 vn_i = vn_i./sqrt(ones(1,3)*(vn_i.*vn_i)); % vectorized form of normalization, equivalent to: vn_i = vn_i./norm(vn_i);
-TC_torsinal = f_gamma*vn_i; % Torsinal torque (soft finger)
-P.contact.symbolic.TC_torsinal = TC_torsinal;
+TC_torsional = f_gamma*vn_i; % Torsional torque (soft finger)
+P.contact.symbolic.TC_torsional = TC_torsional;
 
-% points used for meshgrid sampling
+% points used for mesh grid sampling
 P.basepoints_h = basepoints_h;
-P.HT2inr = HTctr2inr; % plotCoordinateFrame(HT,'r',10)
+P.HTctr2inr = HTctr2inr; % plotCoordinateFrame(HT,'r',10)
 P.contact.symbolic.HTcp = HTcp; % from world CF to contact CF
-
-P.thickness_half = radius;
 
 hand.P = P;
 hand.pactv = true; % if palm is active (available for grasping)

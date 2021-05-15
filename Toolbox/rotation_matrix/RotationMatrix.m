@@ -57,7 +57,7 @@ classdef RotationMatrix
             eulerAngles(1,2) = theta;
             eulerAngles(2,2) = theta2;
             
-            %phi1, phi2
+            % phi1, phi2
             eulerAngles(1,3) = atan2(obj.matrix(2,1)/cos(theta), obj.matrix(1,1)/cos(theta));
             eulerAngles(2,3) = atan2(obj.matrix(2,1)/cos(theta2), obj.matrix(1,1)/cos(theta2));
         end

@@ -43,7 +43,7 @@ for j = 1:numel(osCandList)
         fig_title(end+1:end+5) = ['F',num2str(idx_f),'L',num2str(idx_l),'_'];
         
         %%% Alternative
-%         temp_rmap = hand.F{idx_f}.Link{idx_l}.map_link.linkmesh;
+        % temp_rmap = hand.F{idx_f}.Link{idx_l}.map_link.linkmesh;
         
         temp_rmap = os_rmap{i};  % (Nsample,3)
         px = temp_rmap(:,1); % optional: down-sampling to plot less
@@ -52,11 +52,11 @@ for j = 1:numel(osCandList)
         
         cidx = cidx + 1;
         
-        if all(temp_info) % normal finger links
+        if ispalm(idx_f) % normal finger links
+            scatter3(px,py,pz,'MarkerFaceColor','k');
+        else
             shp = alphaShape(px,py,pz,Inf); % Inf: produces the convex hull
             plot(shp,'Facecolor',cmap(cidx,:),'EdgeColor','k','EdgeAlpha',0.5,'FaceAlpha',0.5);
-        else % if 0 exists in temp_info, palm
-            scatter3(px,py,pz,'MarkerFaceColor','k');
         end
         hold on;
     end

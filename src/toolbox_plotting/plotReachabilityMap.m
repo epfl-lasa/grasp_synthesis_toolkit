@@ -73,7 +73,7 @@ for f = 1:nf
                 map_dataset = map_link.linkmesh;
 
                 %{
-                % Add gaussian noise to avoid singularity in convexhull
+                % Add Gaussian noise to avoid singularity in convexhull
                 noise_sigma = 1;
                 noise_mu = 0;
                 noise = dataset + sqrt(noise_sigma)*randn(size(dataset)) + noise_mu;
@@ -88,7 +88,7 @@ for f = 1:nf
                 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
                 %{
                 if isempty(k) || isempty(k_ch) || isvector(k) || isvector(k_ch)
-                    % incase of degenerated convex hull
+                    % in case of degenerated convex hull
                     scatter3(px,py,pz,'MarkerFaceColor',cmap(cidx,:));
                 end
                 %}

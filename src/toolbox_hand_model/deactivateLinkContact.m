@@ -11,7 +11,7 @@ function [hand, link] = deactivateLinkContact(hand, idx_f, idx_l)
 switch nargin
     
     case 3 % deactivate one link, specified by hand-finger-link
-        if ~idx_f || ~idx_l % palm
+        if ispalm(idx_f) % palm
             hand.pavtc = 0;
         else
             hand.F{idx_f}.Link{idx_l}.lactv = 0;
@@ -28,7 +28,7 @@ switch nargin
         end
         
     case 2 % deactivate all links on one specified finger
-        if ~idx_f % palm
+        if ispalm(idx_f) % palm
             hand.pavtc = 0;
         else
             for idx_l = 1:numel(hand.F{idx_f}.Link)

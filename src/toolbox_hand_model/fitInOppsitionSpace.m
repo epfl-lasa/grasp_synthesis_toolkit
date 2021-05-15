@@ -2,7 +2,7 @@
 % to fit in the given object.
 % Criterion: exist a pair of at least two points in two rmap (of 2 links,
 % respectively), that in the opposite direction
-% 
+%
 % Input:
 %     * rmap: {1,nf}, reachability map of each joint and link of the entire hand
 %     * object: the object want to fit in
@@ -10,11 +10,11 @@
 %     * OS.os_rmap: {1,nos}, length is the number of opposition space. Each component of os_rmap contains all rmap groups of one opposition spaces.
 %     * OS.os_info: {1,nos}, contains information of the link os_rmap within each opposition space
 
-function [OS, existence_heatmap] = fitInOppsitionSpace(rmap, object, if_plot_trial, if_save)
-if nargin < 4
+function [OS, existence_heatmap] = fitInOppsitionSpace(hand, object, rmap, if_plot_trial, if_save)
+if nargin < 5
     if_save = true;
 end
-if nargin < 3
+if nargin < 4
     if_plot_trial = false; % plot result of each feasible trial
 end
 
@@ -35,7 +35,9 @@ for f = 1:nf % iterate over fingers
         nl = length(f_rmap)-1; % number of links (incl. virtual links), ignore the last one (fingertip, not real link)
         for l = 1:nl
             l_rmap = f_rmap{l}; % l_map is a struct
-            if size(l_rmap.linkmesh,1) == 1 % skip virtual link (link length = 0, results in a singular rmap, e.g. the 1st link in the model is virtual)
+            if size(l_rmap.linkmesh,1) == 1 % skip degenerated link (link length = 0, results in a singular rmap, e.g. the 1st link in the model is virtual)
+                continue;
+            elseif ~hand.F{f}.Link{l}.is_real % skil virtual link
                 continue;
             else
                 link_dict{end+1} = struct('mesh',l_rmap.linkmesh,... % l_rmap, struct, has fields: p, r, n, linkmesh, cnvxIndices, bndryIndices
@@ -50,7 +52,7 @@ end
 %% Step 2: find pairs of joint rmaps that fit the object model
 OS = {}; % (1,nos), each cell contains information of one feasible opposition spaces, and save the corresponding opposition spaces, composing of two link rmaps
 
-nm = numel(link_dict); % number of meshgrid (#link*#fingers+palm)
+nm = numel(link_dict); % number of mesh grid (#link*#fingers+palm)
 cmap = distinguishable_colors(nm);
 
 fprintf('[fitInOppsitionSpace] Object radius: %d\n', object.radius);
@@ -59,16 +61,34 @@ fprintf('[fitInOppsitionSpace] Object radius: %d\n', object.radius);
 const = load('problem_config.mat','f_mu'); % load constant values from config files
 d = 2 * object.radius * cos(atan(const.f_mu)); % consider the influence of friction cone
 
-existence_heatmap = zeros(nm); % construct a heatmap to indicate the existance of opposition space between finger links
+existence_heatmap = zeros(nm); % construct a heatmap to indicate the existence of opposition space between finger links
 
 for i = 1:nm
     % Iterate over all rmaps, rmap_i
     rmap_i = link_dict{i}.mesh; % (N,3)
     info_i = link_dict{i}.info; % (1,2)
-    
+    [iF,iL] = deal(info_i(1),info_i(2));
+
     % Notice that Thumb 2nd link belongs to palm
-    if size(rmap_i,1) == 1 % Skip virtual (singular) link (link length is 0)
-        continue;
+    if (~ispalm(iF))
+        if (size(rmap_i,1) == 1) % Skip links with degenerated map
+            continue;
+        end
+        if ~hand.F{iF}.Link{iL}.is_real % Skip virtual link
+            continue;
+        end
+    end
+
+    if ispalm(iF) % Simplify link mesh only for non-palm links
+    else
+        assert(size(rmap_i,2)==3);
+        k_i = boundary(rmap_i,1.0); % (N,3), 0: convex hull; default shrink factor S=0.5
+        if ~isempty(k_i) % k_i~=0, the convhull is not degenerated (palm is degenerated)
+            uniqueIdx = unique(k_i(:));
+            rmap_i = rmap_i(uniqueIdx,:);
+            rmpa_i = unique(rmap_i,'rows');
+            clear k_i;
+        end
     end
 
     for j = i+1:nm
@@ -76,42 +96,50 @@ for i = 1:nm
         % opposition space with rmap_i
         rmap_j = link_dict{j}.mesh;
         info_j = link_dict{j}.info; % (1,2)
-        
-        % Extract data points on the boundary sruface of the rmaps
-        k_i = boundary(rmap_i);
-        if numel(k_i) % k_i~=0, the convhull is not degenerated (palm is degenerated)
-            rmap_i = [rmap_i(k_i(:,1),1), rmap_i(k_i(:,2),2), rmap_i(k_i(:,3),3)];
-            rmap_i = unique(rmap_i,'rows');
-            clear k_i;
+        [jF,jL] = deal(info_j(1),info_j(2));
+
+        if (~ispalm(jF))
+            if (size(rmap_j,1) == 1) % Skip links with degenerated map
+                continue;
+            end
+            if ~hand.F{jF}.Link{jL}.is_real % Skip virtual link
+                continue;
+            end
         end
-        
-        k_j = boundary(rmap_j);
-        if numel(k_j) % k_j~=0, the convhull is not degenerated (palm is degenerated)
-            rmap_j = [rmap_j(k_j(:,1),1), rmap_j(k_j(:,2),2), rmap_j(k_j(:,3),3)];
-            rmap_j = unique(rmap_j,'rows');
-            clear k_j;
+
+        % Extract data points on the boundary surface of the rmaps
+        if ispalm(jF)
+        else
+            assert(size(rmap_j,2)==3);
+            k_j = boundary(rmap_j,1.0); % (N,3), 0: convex hull; default shrink factor S=0.5
+            if ~isempty(k_j) % k_i~=0, the convhull is not degenerated (palm is degenerated)
+                uniqueIdx = unique(k_j(:));
+                rmap_j = rmap_j(uniqueIdx,:);
+                rmap_j = unique(rmap_j,'rows');
+                clear k_j;
+            end
         end
-        
+
         dist = pdist2(rmap_i, rmap_j, 'euclidean'); % taken elements as (1,N), point-wise distance
         max_dist = max(dist(:));
         min_dist = min(dist(:));
-        
+
         if (min_dist<=d) && (max_dist>=d) % Criterion for deciding if two rmaps can intersect the object (min_dist<d), and if they have enough space to fit in the object when they widely open (max_dist>d)
-            % fprintf('Exist feasible opposition space: F%dL%d and F%dL%d.\n',info_i(1),info_i(2),info_j(1),info_j(2)); % F0L0 is palm
+            % fprintf('Exist feasible opposition space: F%dL%d and F%dL%d.\n',iF,iL,jF,jL); % F0L0 is palm
             if_exist = true;
-            
+
             % existence_heatmap(i,j) = max_dist - min_dist; % use the maximum distance difference
             existence_heatmap(i,j) = max_dist;
-            
+
             data.os_info = {info_i, info_j};
             data.os_rmap = {rmap_i, rmap_j};
             data.os_dist = [min_dist, max_dist]; % min and max distance of this pair
             OS{end+1} = data;
         else
             if_exist = false;
-            % fprintf('   No feasible opposition space: F%dL%d and F%dL%d.\n',info_i(1),info_i(2),info_j(1),info_j(2));
+            % fprintf('   No feasible opposition space: F%dL%d and F%dL%d.\n',iF,iL,jF,jL);
         end
-        
+
         %% plotting all pairs of opposition spaces that can fit the object
         if if_exist && if_plot_trial
             figure, hold on;
@@ -127,7 +155,7 @@ for i = 1:nm
             else
                 scatter3(rmap_j(:,1),rmap_j(:,2),rmap_j(:,3),'MarkerFaceColor',cmap(j,:));
             end
-            
+
             % Scatter the pairs of points that result in min and max distances
             [min_i,min_j] = find(dist == min_dist);
             if length(min_i) > 1 || length(min_j) > 1 % if multiple pairs of points have minimal distance, only use the first one, as an example for illustration
@@ -139,7 +167,7 @@ for i = 1:nm
             scatter3([p_min_i(1),p_min_j(1)],[p_min_i(2),p_min_j(2)],[p_min_i(3),p_min_j(3)],50,'k','filled');
                plot3([p_min_i(1),p_min_j(1)],[p_min_i(2),p_min_j(2)],[p_min_i(3),p_min_j(3)],'Color','g','LineWidth',2.0);
             hold on;
-            
+
             [max_i,max_j] = find(dist == max_dist);
             if length(max_i) > 1 || length(max_j) > 1 % if multiple pairs of points have minimal distance, only use the first one, as an example for illustration
                 max_i = max_i(1);
@@ -150,10 +178,10 @@ for i = 1:nm
             scatter3([p_max_i(1),p_max_j(1)],[p_max_i(2),p_max_j(2)],[p_max_i(3),p_max_j(3)],50,'k','filled');
                plot3([p_max_i(1),p_max_j(1)],[p_max_i(2),p_max_j(2)],[p_max_i(3),p_max_j(3)],'Color','g','LineWidth',2.0);
             hold on;
-            
+
             axis equal; grid on;
             xlabel('X'); ylabel('Y'); zlabel('Z');
-            title(['F', num2str(info_i(1)), 'L', num2str(info_i(2)),' and F', num2str(info_j(1)), 'L', num2str(info_j(2))]);
+            title(['F', num2str(iF), 'L', num2str(iL),' and F', num2str(jF), 'L', num2str(jL)]);
             hold off;
         end
         clear('rmap_j');

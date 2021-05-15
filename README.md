@@ -1,7 +1,7 @@
 # Grasp Synthesis Toolkit
 This package is a minimum realization of model-based grasping synthesis problem.
 Given the explicit models of robotic hand and target object, the robot grasping task is formulated as a constrained optimization problem.
-Symbolic expressions are used to accelerate online optimization.
+Symbolic expressions are used to accelerate on line optimization.
 
 This package is being actively updated from time to time.
 
@@ -35,7 +35,7 @@ This package is being actively updated from time to time.
 - All variables are defined following column-priority convention.
 
 - Pay attention to Allegro hand DH parameter offset in rotation angles. These offset values only affect joint angle commands sent to the robot, and should be added to joint angle variables before moving fingers.
-Function `moveFinger` consideres this offset for both `numerical (num)` evaluation, and `symbolic (sym)` evaluation. Symbolic expressions of link positions are used in optimization problems to accelerate the calculation. Numerical evaluation can be used for double-check. Symbolic expression is obtained in `mySGmakeFinger`, `calcSymbolicLinkTransformation`. Such symbolic expressions are saved as function scripts offline in local directories. Then numerical option appears in `moveFinger`.
+Function `moveFinger` considered this offset for both `numerical (num)` evaluation, and `symbolic (sym)` evaluation. Symbolic expressions of link positions are used in optimization problems to accelerate the calculation. Numerical evaluation can be used for double-check. Symbolic expression is obtained in `mySGmakeFinger`, `calcSymbolicLinkTransformation`. Such symbolic expressions are saved as function scripts off-line in local directories. Then numerical option appears in `moveFinger`.
 
 ## License
 This package is created and used for semester project at LASA, EPFL only. YOU ARE NOT PERMITTED TO RELEASE, PUBLISH, OR DISTRIBUTE ANY PART OF THIS PACKAGE.

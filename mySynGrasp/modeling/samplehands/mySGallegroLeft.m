@@ -196,4 +196,9 @@ hand.type = hand_type;
 hand.hand_radius = FinTipDim/2; % radius of hand link
 hand = makePalm(hand); % palm of hand, struct
 
+try
+    hand.F{1}.Link{1}.is_real = false; % This link is real, but can not be used for grasping on real hand.
+catch
+end
+
 end

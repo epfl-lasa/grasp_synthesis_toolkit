@@ -1,5 +1,5 @@
 function d = distanceBTW2Lines(x1,x2,y1,y2,N)
-% This function calculates distance between two lines X (x1->x2) and Y (y1->y2), sepcified by
+% This function calculates distance between two lines X (x1->x2) and Y (y1->y2), specified by
 % pair of 3D points (x1, x2) and (y1 ,y2), respectively. x1,x2 are
 % end-points of line segment X; y1,y2 are end-points of line segment Y.
 % All data points are column vectors in shape (3,1)
@@ -34,14 +34,14 @@ else
     
     %%% Sampling based calculation of distance between 3d line segments
     if isa(x1,'sym')
-        d = sym([]);
+        d = sym(zeros(1,N));
     elseif isa(x1,'double')
-        d = [];
+        d = zeros(1,N);
     end
     
     for i = 0:(N-1) % 5 sampling data points
-        y0 = y1 + (y2-y1)*i/N;
-        d(end+1) = norm(cross(y0-x1,y0-x2))/norm(x2-x1);
+        y0 = y1 + (y2-y1)*i/(N-1);
+        d(i+1) = norm(cross(y0-x1,y0-x2))/norm(x2-x1);
     end
 end
 

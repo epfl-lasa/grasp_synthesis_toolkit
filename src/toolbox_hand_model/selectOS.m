@@ -22,7 +22,7 @@ else
             %%% available list
             if (isequal(os_info{1},used_os_info{1}) && isequal(os_info{2},used_os_info{2})) ||...
                     (isequal(os_info{1},used_os_info{2}) && isequal(os_info{2},used_os_info{1})) % symmetric case
-                % this pair of OS does not exit in besetzt os list 
+                % this pair of OS does not exit in occupied os list 
                 still_avail = false;
             end
 
@@ -39,7 +39,7 @@ else
             costOS(end+1) = max(OS{i}.os_dist); % use the max. distance of the OS as the cost
         end
     end
-    % fprintf('Total OS: %d, used OS: %d, avaliable OS: %d\n',numel(OS),numel(besetztOS),numel(availOS));
+    % fprintf('Total OS: %d, used OS: %d, available OS: %d\n',numel(OS),numel(besetztOS),numel(availOS));
 
     %%% Step 2: select one (or a few) OS out of all available OSs, based on some metric
     [~,min_idx] = sort(costOS); % in ascending order

@@ -8,7 +8,6 @@ function [X_sol, fval, param, if_solution] = optGraspJS(hand, object, os, graspe
 % grasped_objects: contains list of objects that have been grasped. these
 % objects are used in InequalityConstraints (collision avoidance between target object and grasped objects)
 
-
 if nargin < 6
     if_save_trial = false;
 end
@@ -35,13 +34,13 @@ tag = '';
 ncpf = ncp; % number of contacts on fingers (exclude contact on palms)
 
 for i = 1:ncp
-    if ~all(os_info{i}) % palm is in the os list
+    [idx_f,idx_l] = deal(os_info{i}(1),os_info{i}(2));
+
+    if ispalm(idx_f) % palm is in the os list
         pactv = 1; % set palm as flag
         ncpf = ncpf - 1;
         tag(end+1) = 'P';
     else
-        [idx_f,idx_l] = deal(os_info{i}(1),os_info{i}(2));
-    
         nq_pre = min([idx_l, hand.F{idx_f}.n]); % number of joints ahead of idx_lnk, in case idx_lnk > finger.n (possible for fingertip link)
         q_idx = find(hand.qin == idx_f, 1); % first non-zero position (starting point index) of the indices of all joints of the finger in the hand
         
@@ -97,11 +96,7 @@ pvec_ub = hand.P.pvec_ub(1:2);
 pvec_0 = (pvec_ub+pvec_lb)/2; % palm translation vector (from palm center), on palm surface local CF (2,1)
 
 %%% coefficients of force closure
-if cstr.fc
-    coeff_0 = ones(ncp*k,1)/(ncp*k); % friction cone coefficients, the friction cone on each contact point is approximated with k edges
-else
-    coeff_0 = [];
-end
+coeff_0 = ones(ncp*k,1)/(ncp*k); % friction cone coefficients, the friction cone on each contact point is approximated with k edges
 
 X0 = [objctr_0;... % (3,1), 1 : 3
     q_0(:);... % (nq_actv,1), 3+1 : 3+nq_actv
@@ -119,12 +114,8 @@ idx_phi = false(size(X0));  idx_phi(3+nq_actv +1 : 3+nq_actv +ncpf) = true;
 idx_alp = false(size(X0));  idx_alp(3+nq_actv+ncpf +1 : 3+nq_actv +2*ncpf) = true;
 idx_pvec = false(size(X0)); idx_pvec(3+nq_actv+2*ncpf +1 : 3+nq_actv+2*ncpf +2) = true;
 
-if cstr.fc % use force closure constraint
-    idx_coeff = false(size(X0));
-    idx_coeff(3+nq_actv+2*ncpf+2 +1 : 3+nq_actv+2*ncpf+2 +k*ncp) = true;
-else
-    idx_coeff = [];
-end
+idx_coeff = false(size(X0));
+idx_coeff(3+nq_actv+2*ncpf+2 +1 : 3+nq_actv+2*ncpf+2 +k*ncp) = true;
 
 %%% Construct key for variables
 % dictionary of all variables
@@ -132,12 +123,8 @@ dict_q = sym('q%d%d',[hand.n, hand.m/hand.n]); % notice that matlab expands colu
 dict_q = reshape(dict_q.',[],1);
 dict_phi = sym('phi%d%d',[hand.n, hand.m/hand.n]);
 dict_alp = sym('alp%d%d',[hand.n, hand.m/hand.n]);
-if cstr.fc
-    dict_coeff = sym('c%d%d',[ncp,k]);
-    key_c = reshape(dict_coeff.',[],1);
-else
-    key_c = [];
-end
+dict_coeff = sym('c%d%d',[ncp,k]);
+key_c = reshape(dict_coeff.',[],1);
 
 % Keys of parameters
 key_oc = [sym('x');sym('y');sym('z')];
@@ -147,10 +134,10 @@ key_alp = sym(zeros(ncpf,1));
 key_pvec = [sym('vx');sym('vy')]; % translation vector of palm on surface
 
 for i = 1:ncp % filter out the idx of used phi and alp
-    if ~all(os_info{i})
+    [idx_f,idx_l] = deal(os_info{i}(1),os_info{i}(2)); % index of finger that establishes contact and link in the finger
+    if ispalm(idx_f)
         continue; % palm contact does not need alp and phi
     else
-        [idx_f,idx_l] = deal(os_info{i}(1),os_info{i}(2)); % index of finger that establishes contact and link in the finger
         key_phi(i) = dict_phi(idx_f, idx_l);
         key_alp(i) = dict_alp(idx_f, idx_l);
     end
@@ -207,14 +194,9 @@ A = [];
 b = [];
 
 %%% Linear Equality Aeq*X = beq
-if cstr.fc % only exist for force closure constraints
-    Aeq = zeros(1,length(X0));
-    Aeq(idx_coeff) = 1; % sum over c_i is 1
-    beq = 1;
-else
-    Aeq = [];
-    beq = [];
-end
+Aeq = zeros(1,length(X0));
+Aeq(idx_coeff) = 1; % sum over c_i is 1
+beq = 1;
 
 %%% Input parameters for optimization problems
 param.os = os; % saves list of (finger,link) information for opposition space
@@ -225,7 +207,7 @@ param.grasped_objects = grasped_objects; % list of grasped objects
 param.ncp = ncp; % number of contacts
 param.k = k; % number of edges of friction cone
 param.f_mu = f_mu; % coefficient of friction
-param.f_gamma = f_gamma; % coefficient of torsinal friction
+param.f_gamma = f_gamma; % coefficient of torsional friction
 
 param.idx_oc = idx_oc; % index of object center in X
 param.idx_q = idx_q; % index of active joint angles q in X 
@@ -238,7 +220,6 @@ param.dict_q = dict_q;
 
 param.pactv = pactv; % palm active
 param.qactv_loop = qactv_loop; % active joints being used in this optimization problem loop
-param.cstr = cstr;
 
 if ~all(X0>=lb)
     warning('X0 exceeds lower bounds.');

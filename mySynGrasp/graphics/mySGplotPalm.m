@@ -45,7 +45,7 @@ if nargin < 4
     nps = 5; % nps is the resolution of sphere
 end
 if nargin < 3
-    radius = 5;
+    radius = hand.hand_radius;
 end
 if nargin < 2
     transp = 1;

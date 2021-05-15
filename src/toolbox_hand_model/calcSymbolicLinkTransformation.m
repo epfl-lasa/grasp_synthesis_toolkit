@@ -2,7 +2,7 @@ function finger = calcSymbolicLinkTransformation(finger)
     %%% Obtain symbolic expression from base to each contact points on the link
     % Adapted from 'moveFinger.m'
 
-   
+
     if isfield(finger, 'symbolic')
         if ~isempty(finger.symbolic)
             return;
@@ -24,8 +24,7 @@ function finger = calcSymbolicLinkTransformation(finger)
     symbolic.base = sym(finger.base);
     symbolic.DHpars = sym(finger.DHpars); % symbolic form
     symbolic.DHpars(:,3) = [q(1), q(2), q(3), q(4)]; % create a list of symbolic variables for joint angles
-    
-    
+
     %%% [Allegro Hand DH Offset in JOINT ANGLE VARIABLES]
     if strcmp(finger.hand_type, "AllegroHandLeft")
         dh_offset_allegro_left = sym([0, 0, 0, 0;...
@@ -43,8 +42,7 @@ function finger = calcSymbolicLinkTransformation(finger)
         dh_offset_allegro_right = dh_offset_allegro_right(:,[4,1,2,3]);
         symbolic.DHpars(:,3) = symbolic.DHpars(:,3) + dh_offset_allegro_right(:,finger.idx);
     end
-    
-    
+
     symbolic.joints_pos = sym(zeros(3,finger.n+1)); % (3,nl+1) save symbolic expression of finger joints Cartesian positions
     referenceJoint = symbolic.base; % should be a [4,4] matrix
 
@@ -72,25 +70,25 @@ function finger = calcSymbolicLinkTransformation(finger)
             refJoint_old = referenceJoint; % referenceJoint is not updated
         end
 
-
         refCF = referenceJoint;
         if strcmp(finger.hand_type, 'AllegroHandLeft') && (finger.idx == 1) && (finger.Link{l}.idx == 2)
-            local_mtx = [   0,1,0,0;...
-                            -1,0,0,0;...
-                            0,0,1,0;...
-                            0,0,0,1];
-            refCF = refCF*local_mtx; % F1L2 of Allegro hand takes -y as axial direction and +x as radial direction
+            local_mtx = [0,1,0,0;...
+                -1,0,0,0;...
+                0,0,1,0;...
+                0,0,0,1];
+            refCF = refCF*local_mtx; % F1L2 of Allegro hand left takes -y as axial direction and +x as normal direction.
         end
+
         localTransf_test = sym([1,0,0,-L;...
             0,1,0,0;...
             0,0,1,0;...
             0,0,0,1]);
-        refCF = refCF *localTransf_test; % refer to 'calcContactPoint'
+        refCF = refCF * localTransf_test; % refer to 'calcContactPoint'
 
         HTcp = refCF * HTr2cp; % (contact point), set base as the reference point of the link % contact point: HTcp(1:3,4)
         HTlc = refCF * HTr2lc; % (link center), at the same height as the contact point in local frame, but at the central axis of link
 
-        finger.Link{l}.contact.symbolic.refCF = refCF; % reference CF of contact point: locats at the base of the link
+        finger.Link{l}.contact.symbolic.refCF = refCF; % reference CF of contact point: locates at the base of the link
 
         finger.Link{l}.symbolic.HT_this = refJoint_old; % (4,4)
         finger.Link{l}.symbolic.HT_next = referenceJoint; % (4,4)
@@ -107,10 +105,10 @@ function finger = calcSymbolicLinkTransformation(finger)
         finger.Link{l}.contact.symbolic.HTlc = HTlc; % from finger base to link center
 
         % Notice that this is contact p r n, different from link p r n
-        finger.Link{l}.contact.symbolic.r = HTcp(1:3,1); % radical (x of local CF) direction on the contact
+        finger.Link{l}.contact.symbolic.r = HTcp(1:3,1); % axial (x of local CF) direction on the contact
         finger.Link{l}.contact.symbolic.n = HTcp(1:3,2); % normal (y of local CF) direction
         finger.Link{l}.contact.symbolic.p = HTcp(1:3,4); % contact position, expressed in WCF, this is used to construct 'hand.symbolic.Cp'
-        
+
         finger.Link{l}.contact.symbolic.lc = HTlc(1:3,4); % Cartesian coordinates of link center
 
         %%% [link dist] dist from link to an external point
@@ -119,7 +117,7 @@ function finger = calcSymbolicLinkTransformation(finger)
         x0 = [x;y;z]; % space point (e.g. object center)
         x1 = refJoint_old(1:3,4); % reference point of link_this
         x2 = referenceJoint(1:3,4); % reference point of link_next
-        
+
         try
             if finger.Link{l}.is_real % for real link
                 link_dist = norm(cross(x0-x1,x0-x2))/norm(x2-x1);
@@ -134,7 +132,7 @@ function finger = calcSymbolicLinkTransformation(finger)
         %%% [contact point dist] dist from contact point to an external point
         d = finger.Link{l}.contact.symbolic.p(:) - x0; % from an external point (e.g. object CoM), pointing towards contact position on the link
         finger.Link{l}.contact.symbolic.d = d;
-        cp_dist = d'*d; % Eucledian distance from contact point to a space point
+        cp_dist = d'*d; % Euclidean distance from contact point to a space point
         finger.Link{l}.contact.symbolic.cp_dist = cp_dist; % [ L, alp, phi, q1...4, rho, x, y, z]
 
         %%% [approximation of force cone]
@@ -151,8 +149,8 @@ function finger = calcSymbolicLinkTransformation(finger)
 
         vn_i = -d; % (3,1) % from contact point, pointing towards object center
         vn_i = vn_i./sqrt(ones(1,3)*(vn_i.*vn_i)); % vectorized form of normalization, equivalent to: vn_i = vn_i./norm(vn_i);
-        TC_torsinal = f_gamma*vn_i; % Torsinal torque (soft finger)
-        finger.Link{l}.contact.symbolic.TC_torsinal = TC_torsinal; % [ L, alp, phi, q1...4, rho, x, y, z]
+        TC_torsional = f_gamma*vn_i; % Torsional torque (soft finger)
+        finger.Link{l}.contact.symbolic.TC_torsional = TC_torsional; % [ L, alp, phi, q1...4, rho, x, y, z]
     end
 
     symbolic.tip = referenceJoint;

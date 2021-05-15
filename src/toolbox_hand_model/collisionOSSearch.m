@@ -38,12 +38,12 @@ category_list = {}; % save the string of category name for plotting
 
 for f = 1:nf % iterate over fingers
     temp_rmap = rmap{f}; % rmap of the current finger
-    
+
     if isa(temp_rmap,'struct') % this is palm, corresponds to f==6
         link_dict{end+1} = struct('rmap', temp_rmap.linkmesh,... % (N,3)
             'info', [0,0]);
         category_list{end+1} = 'P';
-        
+
     elseif isa(temp_rmap,'cell') % rmap of finger, contains rmaps of links
         nl = length(temp_rmap)-1; % number of links (incl. virtual links), ignore the last one (fingertip, not real link)
         for l = 1:nl
@@ -66,54 +66,60 @@ existence_heatmap = zeros(N); % heatmap to save the number of collisions for eac
 for i = 1:N % this link, link_i
     rmap_i = link_dict{i}.rmap; % (N_samples,3)
     info_i = link_dict{i}.info; % (1,2)
-    
-    if ~all(info_i)
-        disp(' palm');
+    [iF, iL] = deal(info_i(1), info_i(2)); % iF: finger index, iL: link index
+
+    if ispalm(iF)
     else
-        fprintf(' F%d L%d\n', info_i(1), info_i(2));
+        fprintf(' F%d L%d\n', iF, iL);
+        k_i = boundary(rmap_i,1.0); % (N,3), 0: convex hull; default shrink factor S=0.5
+        if ~isempty(k_i)
+            uniqueIdx = unique(k_i(:));
+            rmap_i = rmap_i(uniqueIdx,:);
+            rmap_i = unique(rmap_i,'rows');
+            clear k_i;
+        end
     end
-    
-    k_i = boundary(rmap_i);
-    if ~isempty(k_i)
-        rmap_i = [rmap_i(k_i(:,1),1), rmap_i(k_i(:,2),2), rmap_i(k_i(:,3),3)];
-        rmap_i = unique(rmap_i,'rows');
-    end
-    clear k_i;
-    
+
     link_j_list = {}; % information of all link_j that collide with link_i
     % for loop was i+1:N, I changed this to 1:N (also consider collisions
     % to previous links!
     for j = 1:N % j: index of link that may collide with link i
         rmap_j = link_dict{j}.rmap;
         info_j = link_dict{j}.info;
-        
+        [jF, jL] = deal(info_j(1), info_j(2)); % jF: finger index, jL: link index
+
         % Extract data points on the boundary surface of the rmaps to
         % accelerate computation
-        k_j = boundary(rmap_j);
-        if ~isempty(k_j)
-            rmap_j = [rmap_j(k_j(:,1),1), rmap_j(k_j(:,2),2), rmap_j(k_j(:,3),3)];
-            rmap_j = unique(rmap_j,'rows');
+        if ispalm(jF) % Simplify link mesh only if the link is not palm
+        else
+            k_j = boundary(rmap_j,1.0); % (N,3), 0: convex hull; default shrink factor S=0.5
+            if ~isempty(k_j)
+                uniqueIdx = unique(k_j(:));
+                rmap_j = rmap_j(uniqueIdx,:);
+                rmap_j = unique(rmap_j,'rows');
+                clear k_j;
+            end
         end
-        clear k_j;   
-        % Notice that consequtive links cannot be skipped. Could overlap in
+
+        % Notice that consecutive links cannot be skipped. Could overlap in
         % grasping planning.
         dist = pdist2(rmap_i, rmap_j, 'euclidean');
         min_dist = min(dist(:));
-        
-        if min_dist < d % minimum distance between rmaps is larger than 2*link radius, potential collision exists            
+
+        if min_dist < d % minimum distance between rmaps is larger than 2*link radius, potential collision exists
             existence_heatmap(i,j) = d - min_dist; % the lighter the color, the more likely the collision
             link_j_list{end+1} = info_j; % (1,2) add jth link to the collision list of i
         end
         clear('rmap_j');
     end
     clear('rmap_i');
-    
-    if all(info_i)
-        hand.F{info_i(1)}.Link{info_i(2)}.collList = link_j_list; % add to the 
-    else % palm
+
+    if ispalm(iF)
         hand.P.collList = link_j_list;
+    else
+        hand.F{iF}.Link{iL}.collList = link_j_list;
     end
-    
+
     if nargout > 1
         CollMap{i}.link_info = info_i; % (1,2)
         CollMap{i}.coll_list = link_j_list; % a list containing information of all links that collide link i

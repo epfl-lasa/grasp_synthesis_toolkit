@@ -73,7 +73,6 @@ function newHand = mySGmoveHand(hand,q)
     
     newHand = hand;
 
-    
     if hand.type == "AllegroHandLeft"
         theta_fingers_allegro = [0,pi/2,0,0]';
         theta_thumb_left_allegro = [0,pi/2,-pi/2,0]';
@@ -90,7 +89,6 @@ function newHand = mySGmoveHand(hand,q)
             theta_fingers_allegro,...
             theta_thumb_right_allegro];
     end
-    
         
     for i = 1:length(q)
         if hand.qactv(i) == 0 % the joint is inactive

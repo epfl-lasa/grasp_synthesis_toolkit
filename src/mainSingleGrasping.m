@@ -36,7 +36,7 @@ function [hand, object, opt_soln, opt_cost, if_solution] = mainSingleGrasping(ha
     %% Step 3: Filter potential feasible opposition spaces for grasping
     if recon.os || ~isfile(['../database/opposition_space_',num2str(object.radius),'.mat'])
         disp('Searching for potential opposition space...');
-        OS = fitInOppsitionSpace(rmap, object, false);
+        OS = fitInOppsitionSpace(hand, object, rmap, false);
         fprintf('\n[4] Opposition space constructed.\n');
     else
         os_data = load(['opposition_space_',num2str(object.radius),'.mat']);

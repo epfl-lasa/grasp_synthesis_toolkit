@@ -9,7 +9,7 @@ function metric = calcMetric(finger, metric_type)
     switch metric_type
         case 'manipulability'
             J = calcGeometricJacobian(finger);
-            J = J(1:3,:); % only sub-jacobian for linear velocity
+            J = J(1:3,:); % only sub-Jacobian for linear velocity
             [~,S,~] = svd(J,'econ'); % V*D*W' = JF
             omega = prod(diag(S));
             metric = omega;
