@@ -29,7 +29,7 @@ else
     fprintf('\n[1] Hand model loaded.\n');
 end
 %% Create Object Models
-obj_type = 'sph';
+obj_type = 'cyl';
 nb_objects = 5;  % number of random initializations per object shape
 switch obj_type
     case 'sph'
@@ -46,11 +46,14 @@ switch obj_type
         object_list = cat(2, sph_10, sph_10,sph_10, sph_20, sph_20,sph_20, sph_30);
         
     case 'cyl'
-        R = [14,16,20];
-        H = [30,40,50];
-        idx = 1;
-        Param.radius = R(idx);
-        Param.height = H(idx);
+        param_R10H30.radius = 10;
+        param_R10H30.height = 30;
+        cyl_R10H30 = create_object_list(obj_type, param_R10H30, nb_objects);
+        param_R15H50.radius = 15;
+        param_R15H50.height = 50;
+        cyl_R15H50 = create_object_list(obj_type, param_R15H50, nb_objects);
+        object_list = cat(2, cyl_R10H30,cyl_R10H30,cyl_R10H30,...
+                             cyl_R15H50,cyl_R15H50,cyl_R15H50);
     case 'comp'
         Param.radius = 15;
         Param.height = 30;
@@ -90,8 +93,8 @@ switch (obj_type)
                    {[1,4],[2,3]},{[3,4],[4,4]},{[3,4],[0,0]},...  % radius 20
                    {[1,4],[2,4]}}; % radius 32: almost no other opposition space seems to work
     case 'cyl'
-        os_list = {{[1,4],[2,3]},{[2,4],[3,4]},{[0,0],[2,4]},...  % radius 10
-                   {[1,4],[2,3]},{[2,4],[3,4]},{[0,0],[2,4]}};    % radius .. height ..
+        os_list = {{[1,4],[2,3]},{[2,3],[3,3]},{[0,0],[2,4]},...  % radius 10 height 30
+                   {[1,4],[2,3]},{[2,3],[3,3]},{[0,0],[2,4]}};    % radius 15 height 50
                
     case 'comp'
         os_list = {{[1,4],[2,3]},{[2,4],[3,4]},{[0,0],[2,4]},...  % object 1

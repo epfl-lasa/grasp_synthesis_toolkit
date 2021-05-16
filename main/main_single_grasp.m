@@ -29,18 +29,18 @@ else
     fprintf('\n[1] Hand model loaded.\n');
 end
 %% Create Object Models
-type = 'cyl';
+type = 'sph';
 switch type
     case 'sph'
-        Param.radius = 10;
+        Param.radius = 20;
         transl = [0;0;0];
         object = sphereObject(transl, Param.radius);
     case 'cyl'
-        Param.radius = 14;
-        Param.height = 50;
-        Param.roll = 0;
-        Param.pitch = pi/2;
-        Param.yaw = 0;
+        Param.radius = 10;
+        Param.height = 30;
+        Param.roll = pi/4;
+        Param.pitch = pi/6;
+        Param.yaw = pi/13;
         % bad solution: roll = pi/8, pitch = pi/6, yaw = 0, os={[2,4],[3,4]}
         Param.quat = quaternion([Param.yaw,Param.pitch,Param.roll],'euler', 'ZYX','frame');
         Param.transl = [0;0;-60]; % translation
@@ -50,7 +50,7 @@ switch type
         plotCylinder(object,false);
     case 'comp'
         Param.radius = 15;
-        Param.height = 30;
+        Param.height = 40;
         Param.roll = 0;
         Param.pitch = -pi/2;
         Param.yaw = 0;
@@ -84,7 +84,7 @@ end
 % comprises the ad-/abduction degrees of freedom on the bottom of the finger.
 % The last link is used to model another virtual link at finger tip for convenience.
 
-osList = {{[2,4],[3,4]}};%,...
+osList = {{[0,0],[2,4]}};%,...
 % successful simulations achieved for:
 % {[0,0],[2,4]} % radius: 10, height: 30
 % {[0,0],[3,4]} % radius: 18, height: 30
