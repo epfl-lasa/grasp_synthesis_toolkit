@@ -11,6 +11,7 @@ function osCandList = selectSingleOS(OS, tgt_pair)
 
         if (isequal(os_info{1},tgt_pair{1}) && isequal(os_info{2},tgt_pair{2})) ||...
             (isequal(os_info{1},tgt_pair{2}) && isequal(os_info{2},tgt_pair{1})) % symmetric
+            fprintf("OS min dist: %5.1f,\t max dist: %5.1f\n", OS{i}.os_dist(1), OS{i}.os_dist(2));
             osCandList{end+1} = OS{i}; % this ith os_info exists in the testing pair, so register the index
         end
     end

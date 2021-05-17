@@ -18,8 +18,9 @@ if recon.hand_model && ~exist('hand','var')
     Th(1:3,4) = [0;0;0];
     Th(1:3,1:3) = eye(3);
     
+    pregrasp_rate = 0.7;
     % hand = mySGparadigmatic(Th); % hand.F{i}.idx_real_link: [0 1 1 1 0]
-    hand = mySGallegroLeft(Th);
+    hand = mySGallegroLeft(Th,pregrasp_rate);
     
     save('../database/models.mat', 'hand');
     fprintf('\n[1] Hand model constructed and saved.\n');
@@ -28,11 +29,13 @@ else
     hand = models.hand;
     fprintf('\n[1] Hand model loaded.\n');
 end
+
+mySGplotHand(hand);
 %% Create Object Models
-type = 'comp';
+type = 'sph';
 switch type
     case 'sph'
-        Param.radius = 10;
+        Param.radius = 20;
         transl = [0;0;0];
         object = sphereObject(transl, Param.radius);
     case 'cyl'
@@ -84,7 +87,7 @@ end
 % comprises the ad-/abduction degrees of freedom on the bottom of the finger.
 % The last link is used to model another virtual link at finger tip for convenience.
 
-osList = {{[1,4],[2,3]}};%,...
+osList = {{[0,0],[3,4]}};%,...
 % successful simulations achieved for:
 % {[0,0],[2,4]} % radius: 10, height: 30
 % {[0,0],[3,4]} % radius: 18, height: 30

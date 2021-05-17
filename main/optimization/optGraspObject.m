@@ -57,6 +57,8 @@ for i = 1:ncp
 end
 
 % activate intermediate fingers
+% remove palm from idx_finger
+idx_finger = idx_finger(idx_finger~=0);
 for i=min(idx_finger)+1:max(idx_finger)-1
     % i is necessarily a finger (cannot be zero)
     
@@ -102,7 +104,7 @@ end
 q_lb = hand.limit(:,1); % joint lower limit (fully open)
 q_ub = hand.limit(:,2); % joint upper limit (fully closed)
 
-r = 0.2; % r=0: use lower bound, r=1: use upper bound
+r = 0.5; % r=0: use upper bound, r=1: use lower bound
 q_0 = r*q_lb(qactv_loop) + (1-r)*q_ub(qactv_loop); % (nq_actv,1)
 
 

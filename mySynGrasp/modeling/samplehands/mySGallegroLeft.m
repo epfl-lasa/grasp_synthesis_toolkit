@@ -17,13 +17,17 @@
 %    Optimization of Pose and Joint Stiffness. IEEE Robotics and Automation 
 %    Letters, 3(4):3952-3959, October 2018.
 
-function hand = mySGallegroLeft(T)
+function hand = mySGallegroLeft(T,pos_rate)
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %    1 - A L L E G R O  H A N D  D H  P A R A M E T E R S
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 if nargin < 1
     T = eye(4); % Denativt Hartenberg
+end
+
+if nargin < 2
+    pos_rate = 0.5; % default position of the hand
 end
 
 hand_type = 'AllegroHandLeft';
@@ -181,7 +185,9 @@ for idx = 1:length(DHpars)
         ub = [0.57181227113054078, 1.7367399715833842, 1.8098808147084331, 1.71854352396125431];
     end
     
-    q = (lb(:)+ub(:))/2;
+    %q = (lb(:)+ub(:))/2;
+    % TODO consider abduction and adduction
+    q = ((pos_rate)*lb(:) + (1-pos_rate)*ub(:));
     
     F{idx} = mySGmakeFinger(DHpars{idx},T*base{idx},q,idx,...
         lb,ub,...% lb, ub

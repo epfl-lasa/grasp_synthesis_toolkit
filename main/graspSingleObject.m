@@ -20,14 +20,14 @@ function [hand, object, opt_soln, opt_cost, if_solution] = graspSingleObject(han
         disp('Constructing hand reachability map...');
         [rmap, hand] = reachabilityMap(hand, 'all', false);
         fprintf('\n[3] Hand reachability map constructed.\n');
-        save('../database/models.mat', 'hand');
+        %save('../database/models.mat','hand');
         disp('Hand model updated: link reachability map');
     else
         rmap = load('reachable_map.mat');
         rmap = rmap.map_hand;
         fprintf('\n[3] Hand reachability map loaded.\n');
     end
-    if if_plot
+    if true
         plotReachabilityMap(hand, rmap);
     end
     
@@ -35,14 +35,15 @@ function [hand, object, opt_soln, opt_cost, if_solution] = graspSingleObject(han
     if recon.os || ~isfield(hand,'collision_map')
         disp('Constructing collision map...');
         hand = collisionOSSearch(hand, rmap, if_plot); % collision opposition space
-        save('../database/models.mat', 'hand');
-        disp('Hand model updated: link collision map');
+        %save('../database/models.mat','hand');
+        disp('Hand model updated: link reachability map');
     end
 
     %% Step 3: Filter potential feasible opposition spaces for grasping
     if recon.os || ~isfile(['../database/opposition_space_',num2str(object.radius),'.mat'])
         disp('Searching for potential opposition space...');
         OS = fitInOppsitionSpace(hand, object, rmap, if_plot);
+        %[OS, existence_heatmap] = fitInOppsitionSpace(hand, object, rmap, if_plot);
         fprintf('\n[4] Opposition space constructed.\n');
     else
         os_data = load(['opposition_space_',num2str(object.radius),'.mat']);
@@ -51,7 +52,11 @@ function [hand, object, opt_soln, opt_cost, if_solution] = graspSingleObject(han
     end
 
     osCandList = selectSingleOS(OS,os_pair); % pre-assigned OS in the function as default and for test
-
+    
+    if isempty(osCandList)
+        warning('No OS candidate found')
+    end
+    
     solnSet = {}; % to save results for planned grasp in each oppospc
     costList = []; % to save cost
     opt_soln = []; % overall optimal solution
@@ -78,7 +83,7 @@ function [hand, object, opt_soln, opt_cost, if_solution] = graspSingleObject(han
         if_solution = true;
         [opt_cost, opt_idx] = min(costList);
         opt_soln = solnSet{opt_idx};
-        opt_soln.time_constraints = param.time_constraint
+        opt_soln.time_constraints = param.time_constraint;
         opt_soln.time_optimizer = param.time_optimizer;
         hand = updateHandConfig(hand, opt_soln);
         object = updateObjectConfig(object, opt_soln);

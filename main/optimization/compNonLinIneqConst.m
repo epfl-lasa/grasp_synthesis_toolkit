@@ -15,7 +15,8 @@ function [c, c_grad, param, ht_c, ht_c_grad] = compNonLinIneqConst(hand, param)
     dict_q = param.dict_q; % dictionary of ALL symbolic joint angles: q11,q12,...
     nCylinderAxis = 5;
     nb_axpt = size(obj_axpt,2);
-    eta = 1.5;
+    eta = 1.5;  % TODO change nqpre to idx_l, change lines of constraint definition
+    is_eta = false;
     gamma = 0.5;
     
     palm_point = mean(hand.P.points_inr,1).';
@@ -45,14 +46,23 @@ function [c, c_grad, param, ht_c, ht_c_grad] = compNonLinIneqConst(hand, param)
         if (idx_l > finger.n)
             warning("Nonlinear constraint definition: link index of fingertip");
         end
-        nq_pre = idx_l;
+        if (is_eta)
+            nq_pre = idx_l-1;
+        else
+            nq_pre = idx_l;
+        end
         for j = 1:nq_pre % Iterate over all links, including link in contact ('idx_l')
             link = finger.Link{j};
             % define constraints only if the finger link is real
             if ~link.is_real
                 continue;
             end
-            max_dist = 2*hand.hand_radius*cos(asin(gamma));
+            
+            if is_eta
+                max_dist = 2*hand.hand_radius*sqrt(eta^2-1);
+            else
+                max_dist = 2*hand.hand_radius*cos(asin(gamma));
+            end
             nb_link_pt = min([nCylinderAxis, ceil(link.L/max_dist)]);
             link_pt_dist = 1/nb_link_pt;
             link_pt_loc = link_pt_dist/2 + [0:nb_link_pt-1].*link_pt_dist;
@@ -64,7 +74,11 @@ function [c, c_grad, param, ht_c, ht_c_grad] = compNonLinIneqConst(hand, param)
                     link_pt = link_pos_this + link_pt_loc(m)*delta_pos;
                     obj_pt = obj_axpt(:,n);
                     % squared distance for constraint
-                    c_ij = (link_r + obj_r)^2 - dot((link_pt-obj_pt),(link_pt - obj_pt));
+                    if is_eta
+                        c_ij = (link_r + obj_r*eta)^2 - dot((link_pt-obj_pt),(link_pt - obj_pt));
+                    else
+                        c_ij = (link_r + obj_r)^2 - dot((link_pt-obj_pt),(link_pt - obj_pt));
+                    end
                     c(end+1) = c_ij;
                 end
             end
@@ -75,44 +89,54 @@ function [c, c_grad, param, ht_c, ht_c_grad] = compNonLinIneqConst(hand, param)
                     link_pt = link_pos_this + link_pt_loc(m)*delta_pos;
                     sph_ctr = obj.sym.sphereCenter(:,n);
                     % take the true link radius here
-                    c_ij = (link_r + obj.sphereRadius(n))^2 - dot((link_pt-sph_ctr),(link_pt-sph_ctr));
+                    if is_eta
+                        c_ij = (link_r + obj_r*eta)^2 - dot((link_pt-obj_pt),(link_pt - obj_pt));
+                    else
+                        c_ij = (link_r + obj.sphereRadius(n))^2 - dot((link_pt-sph_ctr),(link_pt-sph_ctr));
+                    end
                     c(end+1) = c_ij;
                 end
             end
-            % define collision avoidance contacting link
-%             link = finger.Link{idx_l};
-%             nAxpt = size(obj_axpt,2); % obj_axpt is (3 x n_points)
-%             %%% assume that the maximal penetration is 10% of the hand
-%             %%% radius
-%             d_max = hand.hand_radius * cos(asin(0.5));
-%             nb_link_pt = ceil(link.L/d_max);
-%             link_pt_dist = 1/nb_link_pt;
-%             link_pt_loc = link_pt_dist/2 + [0:nb_link_pt-1].*link_pt_dist;
-%             % collision with cylinder
-%             link_pos_this = link.symbolic.HT_this(1:3,4);
-%             link_pos_next = link.symbolic.HT_next(1:3,4);
-%             delta_pos = link_pos_next - link_pos_this;
-%             for k=1:nAxpt
-%                 for l=1:nb_link_pt
-%                     link_pt = link_pos_this + link_pt_loc(l)*delta_pos;
-%                     % take the true link radius here
-%                     c_ij = link_r + obj_r - norm(link_pt-obj_axpt(:,k),2);
-%                     c(end+1) = c_ij;
-%                 end
-%             end
-%             % collsion with other spheres
-%             nSpheres = length(obj.sphereRadius);
-%             for k=1:nSpheres
-%                 for l=1:nb_link_pt
-%                     link_pt = link_pos_this + link_pt_loc(l)*delta_pos;
-%                     sph_ctr = obj.sym.sphereCenter(:,k);
-%                     % take the true link radius here
-%                     c_ij = link_r + obj.sphereRadius(k) - norm(link_pt-sph_ctr,2);
-%                     c(end+1) = c_ij;
-%                 end
-%             end
+        end
+        
+        if (is_eta) % add the last link
+            link = finger.Link{idx_l};
+            % define constraints only if the finger link is real
+            if ~link.is_real
+                warning('Indicated contacting link is virtual\n');
+                continue;
+            end
+            %max_dist = 2*hand.hand_radius*cos(asin(gamma));
+            max_dist = 2*hand.hand_radius*sqrt(eta^2-1);
+            nb_link_pt = min([nCylinderAxis, ceil(link.L/max_dist)]);
+            link_pt_dist = 1/nb_link_pt;
+            link_pt_loc = link_pt_dist/2 + [0:nb_link_pt-1].*link_pt_dist;
+            link_pos_this = link.symbolic.HT_this(1:3,4);
+            link_pos_next = link.symbolic.HT_next(1:3,4);
+            delta_pos = link_pos_next - link_pos_this;
+            for m=1:nb_link_pt
+                for n=1:nb_axpt
+                    link_pt = link_pos_this + link_pt_loc(m)*delta_pos;
+                    obj_pt = obj_axpt(:,n);
+                    % squared distance for constraint
+                    c_ij = (link_r + obj_r*eta)^2 - dot((link_pt-obj_pt),(link_pt - obj_pt));
+                    c(end+1) = c_ij;
+                end
+            end
+            % collsion with other spheres
+            nSpheres = length(obj.sphereRadius);
+            for m=1:nb_link_pt
+                for n=1:nSpheres
+                    link_pt = link_pos_this + link_pt_loc(m)*delta_pos;
+                    sph_ctr = obj.sym.sphereCenter(:,n);
+                    % take the true link radius here
+                    c_ij = (link_r + obj_r*eta)^2 - dot((link_pt-obj_pt),(link_pt - obj_pt));
+                    c(end+1) = c_ij;
+                end
+            end
         end
     end
+
     c_idx(end+1) = numel(c);
     c_name{end+1} = 'Collision avoidance (object vs. links)';
     fprintf('%d\n', c_idx(end));
@@ -139,7 +163,11 @@ function [c, c_grad, param, ht_c, ht_c_grad] = compNonLinIneqConst(hand, param)
                 end
                 link_pos_this = link.symbolic.HT_this(1:3,4);
                 link_pos_next = link.symbolic.HT_next(1:3,4);
-                max_dist = 2*hand.hand_radius*cos(asin(gamma));
+                if is_eta
+                    max_dist = 2*hand.hand_radius*sqrt(eta^2-1);
+                else
+                    max_dist = 2*hand.hand_radius*cos(asin(gamma));
+                end
                 nb_link_pt = min([nCylinderAxis, ceil(link.L/max_dist)]);
                 link_pt_dist = 1/nb_link_pt;
                 link_pt_loc = link_pt_dist/2 + [0:nb_link_pt-1].*link_pt_dist; % in [0,1]
@@ -148,7 +176,11 @@ function [c, c_grad, param, ht_c, ht_c_grad] = compNonLinIneqConst(hand, param)
                     for n=1:nb_axpt
                         link_pt = link_pos_this + link_pt_loc(m)*delta_pos;
                         obj_pt = obj_axpt(:,n);
-                        c_ij = (link_r + obj_r)^2 - dot((link_pt-obj_pt),(link_pt-obj_pt)) ;
+                        if is_eta
+                            c_ij = (link_r + obj_r*eta)^2 - dot((link_pt-obj_pt),(link_pt-obj_pt));
+                        else
+                        	c_ij = (link_r + obj_r)^2 - dot((link_pt-obj_pt),(link_pt-obj_pt));
+                        end
                         c(end+1) = c_ij;
                     end
                 end
@@ -159,7 +191,11 @@ function [c, c_grad, param, ht_c, ht_c_grad] = compNonLinIneqConst(hand, param)
                         link_pt = link_pos_this + link_pt_loc(m)*delta_pos;
                         sph_ctr = obj.sym.sphereCenter(:,n);
                         % take the true link radius here
-                        c_ij = (link_r + obj.sphereRadius(n))^2 - dot((link_pt-sph_ctr),(link_pt - sph_ctr));
+                        if is_eta
+                            c_ij = (link_r + obj.sphereRadius(n))^2 - dot((link_pt-sph_ctr),(link_pt-sph_ctr));
+                        else
+                            c_ij = (link_r + obj.sphereRadius(n))^2 - dot((link_pt-sph_ctr),(link_pt - sph_ctr));
+                        end
                         c(end+1) = c_ij;
                     end
                 end

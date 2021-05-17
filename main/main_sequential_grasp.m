@@ -6,7 +6,7 @@ setup_path;
 setup_problem_config;
 
 %% Configuration of experiment
-recon.hand_model = false; % reconstruct hand models [TODO] remove this after changes applied
+recon.hand_model = true; % reconstruct hand models
 recon.object_model = false; % reconstruct object models
 recon.rmap = true; % reconstruct reachability maps (keep true to resample after each grasp)
 recon.os = true;    % reconstruct opposition space (keep true to resample after each grasp)
@@ -29,6 +29,14 @@ else
     fprintf('\n[1] Hand model loaded.\n');
 end
 %% Create Object Models
+
+generate_objects = false;
+if generate_objects
+    nb_obj_per_set = 10;
+    generate_object_set(nb_obj_per_set);
+end
+% define an object manually
+
 % type = 'sph';
 % switch type
 %     case 'sph'
@@ -56,13 +64,12 @@ end
 %         object = compObject(Param);
 %         plotCompObject(object,false);
 % end
-load('spheres.mat')
-load('cylinders.mat')
-load('composites.mat');
-% shperes: 1: tennisball, 2: squash ball
-% cylinders: 1: R12H30, R10H50, R15H60
-% composite objects: hammer, dogbone
-object_list = {cylinders{1}, spheres{2}};
+load('objects.mat')
+
+% squash ball: sphere with radius 20
+% tennis ball: sphere with radius 30 (works only with F1L4 and F2L4
+
+object_list = {sphereObject([0;0;-100],15), sph_10{2}};
 %% Optimization
 
 % List of Opposition Space pairs, used as candidates for grasping.
@@ -83,38 +90,24 @@ object_list = {cylinders{1}, spheres{2}};
 % comprises the ad-/abduction degrees of freedom on the bottom of the finger.
 % The last link is used to model another virtual link at finger tip for convenience.
 
-osList = {{[2,4],[3,4]},{[3,4],[0,0]}};%,...
-% successful simulations achieved for:
-% {[0,0],[2,4]} % radius: 10, height: 30
-% {[0,0],[3,4]} % radius: 18, height: 30
-% {[2,4],[3,4]} % radius: 14, height: 30
-% {[2,3],[3,3]} % radius: 14, height: 30
-% {[2,2],[3,2]} % radius: 14, height: 30
-% [deprecated]
-% {[2,3],[3,3]}
-% {[2,4],[3,4]}
-% {[0,0],[1,4]}
-% {[0,0],[2,4]}
-% {[1,4],[2,2]}     
-% failed:
-% {[1,4],[2,3]}
-% {[2,2],[4,2]},...
-% {[2,2],[2,4]}};
+osList = {{[2,3],[3,3]},{[3,4],[2,4]}};%,...
+
 
 grasped_objects = {};
 for i = 1:numel(osList)
-    fprintf('Experiment: %d\n', i);
+    fprintf('Grasping object: %d\n', i);
     
     os_pair = osList{i};
     object = object_list{i};
-    file_title = ['single_grasp_'...
+    file_title = ['sequential_grasp_'...
+        '_obj_',num2str(i),...
         '_F',num2str(os_pair{1}(1)),'L',num2str(os_pair{1}(2)),...
         '_F',num2str(os_pair{2}(1)),'L',num2str(os_pair{2}(2)),...
-        '_type_',object.type,'_r_',num2str(object.radius)];
+        '_type_',object.type];
     disp(file_title);
 
     % Solve grasping synthesis optimization problem
-    [hand, object, opt_soln, opt_cost, if_solution] = graspSingleCylinder(hand, object, recon, os_pair, true, false, file_title, grasped_objects);
+    [hand, object, opt_soln, opt_cost, if_solution] = graspSingleObject(hand, object, recon, os_pair, false, false, file_title, grasped_objects);
 
     % Visualize and save results
     if if_solution
@@ -124,5 +117,6 @@ for i = 1:numel(osList)
         savefig(['../database/results/',file_title,'.fig']);
     else
         disp('No solution obtained. Exit.');
+        break; % stop execution if one of the objects cannot be placed
     end
 end
