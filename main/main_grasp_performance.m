@@ -6,7 +6,7 @@ setup_path;
 setup_problem_config;
 
 %% Configuration of experiment
-recon.hand_model = false; % reconstruct hand models [TODO] remove this after changes applied
+recon.hand_model = true; % reconstruct hand models [TODO] remove this after changes applied
 recon.object_model = true; % reconstruct object models
 recon.rmap = true; % reconstruct reachability maps
 recon.os = true; % reconstruct opposition space
@@ -29,7 +29,7 @@ else
     fprintf('\n[1] Hand model loaded.\n');
 end
 %% Create Object Models
-obj_type = 'cyl';
+obj_type = 'comp';
 nb_objects = 5;  % number of random initializations per object shape
 switch obj_type
     case 'sph'
@@ -46,20 +46,23 @@ switch obj_type
         object_list = cat(2, sph_10, sph_10,sph_10, sph_20, sph_20,sph_20, sph_30);
         
     case 'cyl'
-        param_R10H30.radius = 10;
-        param_R10H30.height = 30;
-        cyl_R10H30 = create_object_list(obj_type, param_R10H30, nb_objects);
+        %param_R10H30.radius = 10;
+        %param_R10H30.height = 30;
+        %cyl_R10H30 = create_object_list(obj_type, param_R10H30, nb_objects);
         param_R15H50.radius = 15;
         param_R15H50.height = 50;
         cyl_R15H50 = create_object_list(obj_type, param_R15H50, nb_objects);
-        object_list = cat(2, cyl_R10H30,cyl_R10H30,cyl_R10H30,...
-                             cyl_R15H50,cyl_R15H50,cyl_R15H50);
+        %object_list = cat(2, cyl_R10H30,cyl_R10H30,cyl_R10H30,...
+        %                     cyl_R15H50,cyl_R15H50,cyl_R15H50);
+        object_list = cat(2,cyl_R15H50,cyl_R15H50);
     case 'comp'
-        Param.radius = 15;
-        Param.height = 30;
-
-        Param.sphereCenter = [0,0,25;0,0,-25];
-        Param.sphereRadius = [20,20];
+        param1.radius = 10;
+        param1.height = 30;
+        param1.sphereCenter = [0,0,25;0,0,-25];
+        param1.sphereRadius = [15,15];
+        comp_1 = create_object_list(obj_type, param1, nb_objects);
+        
+        object_list = cat(2,comp_1,comp_1);
 %         object = compObj(Param);
 %         mySGplotHand(hand);
 %         plotCompObject(object,false);
@@ -93,12 +96,12 @@ switch (obj_type)
                    {[1,4],[2,3]},{[3,4],[4,4]},{[3,4],[0,0]},...  % radius 20
                    {[1,4],[2,4]}}; % radius 32: almost no other opposition space seems to work
     case 'cyl'
-        os_list = {{[1,4],[2,3]},{[2,3],[3,3]},{[0,0],[2,4]},...  % radius 10 height 30
-                   {[1,4],[2,3]},{[2,3],[3,3]},{[0,0],[2,4]}};    % radius 15 height 50
-               
+        %os_list = {{[1,4],[2,3]},{[2,3],[3,3]},{[0,0],[2,4]},...  % radius 10 height 30
+        %           {[1,4],[2,3]},{[2,3],[3,3]},{[0,0],[2,4]}};    % radius 15 height 50
+        os_list = {{[2,3],[3,3]}};       
     case 'comp'
-        os_list = {{[1,4],[2,3]},{[2,4],[3,4]},{[0,0],[2,4]},...  % object 1
-                   {[1,4],[2,3]},{[2,4],[3,4]},{[0,0],[2,4]}}     % object 2
+        os_list = {{[2,3],[3,3]}}  % object 1
+                   %{[1,4],[2,3]},{[2,4],[3,4]},{[2,3],[2,4]}}     % object 2
 end
 % successful simulations achieved for:
 % {[0,0],[2,4]} % radius: 10, height: 30

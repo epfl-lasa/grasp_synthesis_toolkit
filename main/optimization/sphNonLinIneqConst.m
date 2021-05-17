@@ -7,7 +7,7 @@ function [c, c_grad, param, ht_c, ht_c_grad] = sphNonLinIneqConst(hand, param)
     
     ncp = param.ncp; % number of contacts
     X_key = param.X_key;
-    oc = [sym('x');sym('y');sym('z')]; % object center
+    oc = param.obj.sym.ctr; % object center
     dict_q = param.dict_q; % dictionary of symbolic variables: q11,q12,...
     nCylinderAxis = 5;
     palm_point = mean(hand.P.points_inr,1).';     % point on inner palm surface [3 x 1] array
@@ -43,7 +43,10 @@ function [c, c_grad, param, ht_c, ht_c_grad] = sphNonLinIneqConst(hand, param)
                 if ~link.is_real
                     continue;
                 end
-                link_dist = link.symbolic.link_dist;
+                %link_dist = link.symbolic.link_dist;
+                x0 = link.symbolic.HT_this(1:3,4);
+                x1 = link.symbolic.HT_next(1:3,4);
+                link_dist = norm(cross(x1-x0,oc-x0))/link.L;
                 c_ij = -(link_dist-link_r-obj_r); % symvar: [q1...q4, x, y, z]
                 c(end+1) = c_ij; % c<=0; distance from link to should larger than radius of finger digit cylinder plus radius of object
             end

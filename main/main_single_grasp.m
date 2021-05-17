@@ -29,15 +29,15 @@ else
     fprintf('\n[1] Hand model loaded.\n');
 end
 %% Create Object Models
-type = 'sph';
+type = 'comp';
 switch type
     case 'sph'
-        Param.radius = 20;
+        Param.radius = 10;
         transl = [0;0;0];
         object = sphereObject(transl, Param.radius);
     case 'cyl'
-        Param.radius = 10;
-        Param.height = 30;
+        Param.radius = 15;
+        Param.height = 50;
         Param.roll = pi/4;
         Param.pitch = pi/6;
         Param.yaw = pi/13;
@@ -49,8 +49,8 @@ switch type
         mySGplotHand(hand);
         plotCylinder(object,false);
     case 'comp'
-        Param.radius = 15;
-        Param.height = 40;
+        Param.radius = 10;
+        Param.height = 30;
         Param.roll = 0;
         Param.pitch = -pi/2;
         Param.yaw = 0;
@@ -59,7 +59,7 @@ switch type
         Param.transl = [0;0;-100]; % translation
         
         Param.sphereCenter = [0,0,25;0,0,-25];
-        Param.sphereRadius = [20,20];
+        Param.sphereRadius = [15,15];
         object = compObject(Param);
         mySGplotHand(hand);
         plotCompObject(object,false);
@@ -84,7 +84,7 @@ end
 % comprises the ad-/abduction degrees of freedom on the bottom of the finger.
 % The last link is used to model another virtual link at finger tip for convenience.
 
-osList = {{[0,0],[2,4]}};%,...
+osList = {{[1,4],[2,3]}};%,...
 % successful simulations achieved for:
 % {[0,0],[2,4]} % radius: 10, height: 30
 % {[0,0],[3,4]} % radius: 18, height: 30
