@@ -14,6 +14,15 @@ function [c, c_grad, param, ht_c, ht_c_grad] = sphNonLinIneqConst(hand, param)
     palm_point = mean(hand.P.points_inr,1).';     % point on inner palm surface [3 x 1] array
     palm_normal = hand.P.contact.symbolic.n(:);   % palm surface normal
     
+    % build an array containing active finger indices
+    f_actv = zeros(1,ncp); 
+    for i = 1:ncp
+        f_actv(i) = os_info{i}(1);
+    end
+    % if the palm is in contact, remove the included fingers
+    f_actv = f_actv(f_actv ~= 0);
+    f_actv = min(f_actv):max(f_actv); % 
+    
     fprintf('\nConstructing Nonl. Inequality Constraints: \n');
     c = sym([]); % to save the symbolic form
     c_idx = []; % to save idx of different constraints
@@ -63,15 +72,11 @@ function [c, c_grad, param, ht_c, ht_c_grad] = sphNonLinIneqConst(hand, param)
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     fprintf('* Collision avoidance (object vs. included fingers): ');
     % included finger: finger that between two active fingers, e.g. the middle finger is included if using index finger and ring finger for grasping
-    f_idx_list = zeros(1,ncp); % list of finger index
-    for i = 1:ncp
-        f_idx_list(i) = os_info{i}(1);
-    end
-    f_idx_list(~f_idx_list) = []; % remove 0 (palm) from list
-    n_diff = max(f_idx_list)-min(f_idx_list); % number of in-between fingers
+
+    incl_fingers = min(f_actv)+1:max(f_actv)-1; % indices of in-between fingers
     
-    if n_diff>1 % in-between finger exists
-        for f = min(f_idx_list)+1:max(f_idx_list)-1
+    if ~isempty(incl_fingers)
+        for f = min(f_actv)+1:max(f_actv)-1
             finger = hand.F{f}; % same as collision avoidance: father-links vs. object
             for j = 1:finger.n-1
                 link = finger.Link{j};
@@ -86,6 +91,7 @@ function [c, c_grad, param, ht_c, ht_c_grad] = sphNonLinIneqConst(hand, param)
         end
     end
     
+    
     c_idx(end+1) = numel(c)-sum(c_idx);
     c_name{end+1} = 'Collision avoidance (object vs. in-between fingers)';
     fprintf('%d\n', c_idx(end));
@@ -99,8 +105,6 @@ function [c, c_grad, param, ht_c, ht_c_grad] = sphNonLinIneqConst(hand, param)
     % compute the distance of the sphere to the palm using a projection on
     % the normal vector of the palm
    
-    %palmPt = hand.P.points_inr(1,:).'; % point on the inner surface of the palm
-    %palmNormal = hand.P.contact.symbolic.n;
     dist = dot(palm_normal,oc-palm_point); % project the object on the normal
     c(end+1) = obj_r - dist;
     
@@ -129,6 +133,12 @@ function [c, c_grad, param, ht_c, ht_c_grad] = sphNonLinIneqConst(hand, param)
             for k = 1:numel(coll) % link `k` collides with palm
                 [k_f,k_l] = deal(coll{k}(1),coll{k}(2));
                 
+                % construct the constaints only w.r.t finger links
+                % that are active
+                if ((k_f < min(f_actv)) || (k_f > min(f_actv)))
+                    continue;
+                end
+                
                 % Check if current collision pair has already been detected previously
                 already_exist = false; % if the current pair of collision already exists in the collision pair
                 if ~isempty(all_collision_pairs)
@@ -156,6 +166,7 @@ function [c, c_grad, param, ht_c, ht_c_grad] = sphNonLinIneqConst(hand, param)
                         if k_l == find(hand.F{k_f}.idx_real_link,1) % if k_l is the first active link, skip it
                             continue;
                         end
+                        
                         x1 = link_k.symbolic.HT_this(1:3,4); % end points of collided link
                         x2 = link_k.symbolic.HT_next(1:3,4);
 
@@ -202,10 +213,6 @@ function [c, c_grad, param, ht_c, ht_c_grad] = sphNonLinIneqConst(hand, param)
 
                 for k = 1:numel(coll) % link k collides with current link
                     [k_f,k_l] = deal(coll{k}(1),coll{k}(2));
-
-                    if k_f == idx_f % skip link on the same finger
-                        continue;
-                    end
 
                     if abs(k_f-idx_f)>1 % skip non-adjacent fingers
                         continue;

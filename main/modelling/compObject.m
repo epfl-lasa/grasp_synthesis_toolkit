@@ -104,7 +104,7 @@ sphCtr = rotatepoint(quat,sphCtr).' + center; % store in sphCtr as (3 x N)
 % add symbolic expressions
 symSphCtr = sym([]);
 for i=1:length(Param.sphereRadius)
-    symSphCtr(:,i) = symCtr + rotate_point(sphCtr(:,i),symQuat);
+    symSphCtr(:,i) = symCtr + rotate_point(Param.sphereCenter(i,:).',symQuat);
 end
 
 %% constant fields 

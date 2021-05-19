@@ -22,6 +22,16 @@ function [c, c_grad, param, ht_c, ht_c_grad] = compNonLinIneqConst(hand, param)
     palm_point = mean(hand.P.points_inr,1).';
     palm_normal = hand.P.contact.symbolic.n(:);
     
+    % build an array containing active finger indices
+    f_actv = zeros(1,ncp); 
+    for i = 1:ncp
+        f_actv(i) = os_info{i}(1);
+    end
+    % if the palm is in contact, remove the included fingers
+    f_actv = f_actv(f_actv ~= 0);
+    f_actv = min(f_actv):max(f_actv); % 
+    
+    
     fprintf('\nConstructing Nonl. Inequality Constraints: \n');
     c = sym([]); % to save the symbolic form
     c_idx = []; % to save idx of different constraints
@@ -46,23 +56,16 @@ function [c, c_grad, param, ht_c, ht_c_grad] = compNonLinIneqConst(hand, param)
         if (idx_l > finger.n)
             warning("Nonlinear constraint definition: link index of fingertip");
         end
-        if (is_eta)
-            nq_pre = idx_l-1;
-        else
-            nq_pre = idx_l;
-        end
+
+        nq_pre = idx_l;
         for j = 1:nq_pre % Iterate over all links, including link in contact ('idx_l')
             link = finger.Link{j};
             % define constraints only if the finger link is real
             if ~link.is_real
                 continue;
             end
-            
-            if is_eta
-                max_dist = 2*hand.hand_radius*sqrt(eta^2-1);
-            else
-                max_dist = 2*hand.hand_radius*cos(asin(gamma));
-            end
+           
+            max_dist = 2*hand.hand_radius*cos(asin(gamma));
             nb_link_pt = min([nCylinderAxis, ceil(link.L/max_dist)]);
             link_pt_dist = 1/nb_link_pt;
             link_pt_loc = link_pt_dist/2 + [0:nb_link_pt-1].*link_pt_dist;
@@ -74,11 +77,8 @@ function [c, c_grad, param, ht_c, ht_c_grad] = compNonLinIneqConst(hand, param)
                     link_pt = link_pos_this + link_pt_loc(m)*delta_pos;
                     obj_pt = obj_axpt(:,n);
                     % squared distance for constraint
-                    if is_eta
-                        c_ij = (link_r + obj_r*eta)^2 - dot((link_pt-obj_pt),(link_pt - obj_pt));
-                    else
-                        c_ij = (link_r + obj_r)^2 - dot((link_pt-obj_pt),(link_pt - obj_pt));
-                    end
+                    c_ij = (link_r + obj_r)^2 - dot((link_pt-obj_pt),(link_pt - obj_pt));
+                    
                     c(end+1) = c_ij;
                 end
             end
@@ -89,52 +89,13 @@ function [c, c_grad, param, ht_c, ht_c_grad] = compNonLinIneqConst(hand, param)
                     link_pt = link_pos_this + link_pt_loc(m)*delta_pos;
                     sph_ctr = obj.sym.sphereCenter(:,n);
                     % take the true link radius here
-                    if is_eta
-                        c_ij = (link_r + obj_r*eta)^2 - dot((link_pt-obj_pt),(link_pt - obj_pt));
-                    else
-                        c_ij = (link_r + obj.sphereRadius(n))^2 - dot((link_pt-sph_ctr),(link_pt-sph_ctr));
-                    end
+                    c_ij = (link_r + obj.sphereRadius(n))^2 - dot((link_pt-sph_ctr),(link_pt-sph_ctr));
+                    
                     c(end+1) = c_ij;
                 end
             end
         end
         
-        if (is_eta) % add the last link
-            link = finger.Link{idx_l};
-            % define constraints only if the finger link is real
-            if ~link.is_real
-                warning('Indicated contacting link is virtual\n');
-                continue;
-            end
-            %max_dist = 2*hand.hand_radius*cos(asin(gamma));
-            max_dist = 2*hand.hand_radius*sqrt(eta^2-1);
-            nb_link_pt = min([nCylinderAxis, ceil(link.L/max_dist)]);
-            link_pt_dist = 1/nb_link_pt;
-            link_pt_loc = link_pt_dist/2 + [0:nb_link_pt-1].*link_pt_dist;
-            link_pos_this = link.symbolic.HT_this(1:3,4);
-            link_pos_next = link.symbolic.HT_next(1:3,4);
-            delta_pos = link_pos_next - link_pos_this;
-            for m=1:nb_link_pt
-                for n=1:nb_axpt
-                    link_pt = link_pos_this + link_pt_loc(m)*delta_pos;
-                    obj_pt = obj_axpt(:,n);
-                    % squared distance for constraint
-                    c_ij = (link_r + obj_r*eta)^2 - dot((link_pt-obj_pt),(link_pt - obj_pt));
-                    c(end+1) = c_ij;
-                end
-            end
-            % collsion with other spheres
-            nSpheres = length(obj.sphereRadius);
-            for m=1:nb_link_pt
-                for n=1:nSpheres
-                    link_pt = link_pos_this + link_pt_loc(m)*delta_pos;
-                    sph_ctr = obj.sym.sphereCenter(:,n);
-                    % take the true link radius here
-                    c_ij = (link_r + obj_r*eta)^2 - dot((link_pt-obj_pt),(link_pt - obj_pt));
-                    c(end+1) = c_ij;
-                end
-            end
-        end
     end
 
     c_idx(end+1) = numel(c);
@@ -147,14 +108,10 @@ function [c, c_grad, param, ht_c, ht_c_grad] = compNonLinIneqConst(hand, param)
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     fprintf('* [2/5] Collision avoidance (object vs. included fingers): ');
     % included finger: finger that between two active fingers, e.g. the middle finger is included if using index finger and ring finger for grasping
-    f_idx_list = zeros(1,ncp); % list of finger index
-    for i = 1:ncp
-        f_idx_list(i) = os_info{i}(1);
-    end
-    incl_fingers = min(f_idx_list)+1:max(f_idx_list)-1; % indices of in-between fingers
+    incl_fingers = min(f_actv)+1:max(f_actv)-1; % indices of in-between fingers
   
     if ~isempty(incl_fingers) % in-between finger exists
-        for f = 1:length(incl_fingers)
+        for f = min(f_actv)+1:max(f_actv)-1
             finger = hand.F{incl_fingers(f)}; % same as collision avoidance: father-links vs. object
             for i = 1:finger.n
                 link = finger.Link{i};
@@ -163,11 +120,9 @@ function [c, c_grad, param, ht_c, ht_c_grad] = compNonLinIneqConst(hand, param)
                 end
                 link_pos_this = link.symbolic.HT_this(1:3,4);
                 link_pos_next = link.symbolic.HT_next(1:3,4);
-                if is_eta
-                    max_dist = 2*hand.hand_radius*sqrt(eta^2-1);
-                else
-                    max_dist = 2*hand.hand_radius*cos(asin(gamma));
-                end
+
+                max_dist = 2*hand.hand_radius*cos(asin(gamma));
+                
                 nb_link_pt = min([nCylinderAxis, ceil(link.L/max_dist)]);
                 link_pt_dist = 1/nb_link_pt;
                 link_pt_loc = link_pt_dist/2 + [0:nb_link_pt-1].*link_pt_dist; % in [0,1]
@@ -176,11 +131,9 @@ function [c, c_grad, param, ht_c, ht_c_grad] = compNonLinIneqConst(hand, param)
                     for n=1:nb_axpt
                         link_pt = link_pos_this + link_pt_loc(m)*delta_pos;
                         obj_pt = obj_axpt(:,n);
-                        if is_eta
-                            c_ij = (link_r + obj_r*eta)^2 - dot((link_pt-obj_pt),(link_pt-obj_pt));
-                        else
-                        	c_ij = (link_r + obj_r)^2 - dot((link_pt-obj_pt),(link_pt-obj_pt));
-                        end
+
+                        c_ij = (link_r + obj_r)^2 - dot((link_pt-obj_pt),(link_pt-obj_pt));
+
                         c(end+1) = c_ij;
                     end
                 end
@@ -191,11 +144,8 @@ function [c, c_grad, param, ht_c, ht_c_grad] = compNonLinIneqConst(hand, param)
                         link_pt = link_pos_this + link_pt_loc(m)*delta_pos;
                         sph_ctr = obj.sym.sphereCenter(:,n);
                         % take the true link radius here
-                        if is_eta
-                            c_ij = (link_r + obj.sphereRadius(n))^2 - dot((link_pt-sph_ctr),(link_pt-sph_ctr));
-                        else
-                            c_ij = (link_r + obj.sphereRadius(n))^2 - dot((link_pt-sph_ctr),(link_pt - sph_ctr));
-                        end
+                        c_ij = (link_r + obj.sphereRadius(n))^2 - dot((link_pt-sph_ctr),(link_pt - sph_ctr));
+                        
                         c(end+1) = c_ij;
                     end
                 end
@@ -215,11 +165,11 @@ function [c, c_grad, param, ht_c, ht_c_grad] = compNonLinIneqConst(hand, param)
     
     for k=1:nb_axpt
         dist = dot(palm_normal,(obj_axpt(:,k)-palm_point)); % project the object on the normal
-        c(end+1) = (link_r + obj_r) - dist;
+        c(end+1) = obj_r - dist;
     end
     for k=1:length(obj.sphereRadius)
         dist = dot(palm_normal, (obj.sym.sphereCenter(:,k)-palm_point));
-        c(end+1) = (link_r + obj.sphereRadius(k)) - dist;
+        c(end+1) = obj.sphereRadius(k) - dist;
     end
     c_idx(end+1) = numel(c)-sum(c_idx);
     c_name{end+1} = 'Collision avoidance (object vs. palm)';
@@ -246,6 +196,14 @@ function [c, c_grad, param, ht_c, ht_c_grad] = compNonLinIneqConst(hand, param)
             
             for k = 1:numel(coll) % link `k` collides with palm
                 [k_f,k_l] = deal(coll{k}(1),coll{k}(2));
+                
+                                
+                % construct the constaints only w.r.t finger links
+                % that are active
+                if ((k_f < min(f_actv)) || (k_f > min(f_actv)))
+                    fprintf('Palm collision contains inactive link. Link is skipped.\n');
+                    continue;
+                end
                 
                 % Check if current collision pair has already been detected previously
                 already_exist = false; % if the current pair of collision already exists in the collision pair
@@ -320,10 +278,6 @@ function [c, c_grad, param, ht_c, ht_c_grad] = compNonLinIneqConst(hand, param)
 
                 for k = 1:numel(coll) % link k collides with current link
                     [k_f,k_l] = deal(coll{k}(1),coll{k}(2));
-
-                    if k_f == idx_f % skip link on the same finger
-                        continue;
-                    end
 
                     if abs(k_f-idx_f)>1 % skip non-adjacent fingers
                         continue;
