@@ -56,9 +56,11 @@ for i = 1:ncp
     tag(end+1) = '_';
 end
 
-% activate intermediate fingers
+
 % remove palm from idx_finger
 idx_finger = idx_finger(idx_finger~=0);
+% activate intermediate fingers (if both contacting links are fingers)
+
 for i=min(idx_finger)+1:max(idx_finger)-1
     % i is necessarily a finger (cannot be zero)
     

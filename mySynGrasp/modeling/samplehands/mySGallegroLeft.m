@@ -185,9 +185,12 @@ for idx = 1:length(DHpars)
         ub = [0.57181227113054078, 1.7367399715833842, 1.8098808147084331, 1.71854352396125431];
     end
     
-    %q = (lb(:)+ub(:))/2;
-    % TODO consider abduction and adduction
-    q = ((pos_rate)*lb(:) + (1-pos_rate)*ub(:));
+    % consider abduction and adduction
+    is_first_link = [1;0;0;0];
+    
+    % reset the hand to the desired position, but center abduction and
+    % adduction
+    q = is_first_link .* (lb(:) + ub(:))/2 + (1-is_first_link) .* ((pos_rate)*lb(:) + (1-pos_rate)*ub(:));
     
     F{idx} = mySGmakeFinger(DHpars{idx},T*base{idx},q,idx,...
         lb,ub,...% lb, ub

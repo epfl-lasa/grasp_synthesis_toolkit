@@ -47,7 +47,9 @@ function [obj, obj_grad, ht_obj, ht_obj_grad] = symObjectiveFunction(hand, param
         atan2(norm(cross(fi,(cpt-cpi))), dot(fi,(cpt-cpi))); % 'Cost force closure'
 
     %%% Cost 2: Torque cost
-    fg = sym([0,0,-1]); % (1,3) (direction of) force of gravity
+    
+    % gravity facing along -x axis (according to expeimental setup)
+    fg = sym([-1,0,0]); % (1,3) (direction of) force of gravity
     Ct = norm(cross((obj_cntr-cpi),-fg) + cross((obj_cntr-cpt),-fg));
 
     %%% minimize joint angle movement

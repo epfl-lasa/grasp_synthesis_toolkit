@@ -1,5 +1,6 @@
 % Obtain the symbolic form of nonlinear inequality constraints
 function [c, c_grad, param, ht_c, ht_c_grad] = sphNonLinIneqConst(hand, param)
+
     os_info = param.os.os_info;
     
     obj_r = param.obj.radius; % object radius
@@ -430,4 +431,3 @@ function [c, c_grad, param, ht_c, ht_c_grad] = sphNonLinIneqConst(hand, param)
         ht_c = matlabFunction(c,'Vars',X_key);
         ht_c_grad = matlabFunction(c_grad,'Vars',X_key);
     end
-end

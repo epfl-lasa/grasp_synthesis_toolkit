@@ -1,5 +1,6 @@
 % Obtain the symbolic form of nonlinear inequality constraints
 function [ceq, ceq_grad, param, ht_ceq, ht_ceq_grad] = sphNonLinEqConst(hand, param)
+
     os_info = param.os.os_info;
     ncp = param.ncp;
     r = param.obj.radius; % object radius

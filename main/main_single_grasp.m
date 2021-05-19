@@ -6,10 +6,10 @@ setup_path;
 setup_problem_config;
 
 %% Configuration of experiment
-recon.hand_model = true; % reconstruct hand models [TODO] remove this after changes applied
+recon.hand_model = false; % reconstruct hand models [TODO] remove this after changes applied
 recon.object_model = false; % reconstruct object models
-recon.rmap = true; % reconstruct reachability maps
-recon.os = true; % reconstruct opposition space
+recon.rmap = false; % reconstruct reachability maps
+recon.os = false; % reconstruct opposition space
 
 %% Create Hand Models
 if recon.hand_model && ~exist('hand','var')
@@ -20,7 +20,7 @@ if recon.hand_model && ~exist('hand','var')
     
     pregrasp_rate = 0.7;
     % hand = mySGparadigmatic(Th); % hand.F{i}.idx_real_link: [0 1 1 1 0]
-    hand = mySGallegroLeft(Th,pregrasp_rate);
+    hand = mySGallegroLeft(Th, pregrasp_rate);
     
     save('../database/models.mat', 'hand');
     fprintf('\n[1] Hand model constructed and saved.\n');
