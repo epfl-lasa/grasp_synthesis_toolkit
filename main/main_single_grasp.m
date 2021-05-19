@@ -7,12 +7,12 @@ setup_problem_config;
 
 %% Configuration of experiment
 recon.hand_model = false; % reconstruct hand models [TODO] remove this after changes applied
-recon.object_model = false; % reconstruct object models
+recon.object_model = true; % reconstruct object models
 recon.rmap = false; % reconstruct reachability maps
-recon.os = false; % reconstruct opposition space
+recon.os = true; % reconstruct opposition space
 
 %% Create Hand Models
-if recon.hand_model && ~exist('hand','var')
+if recon.hand_model || ~exist('hand','var')
     disp('Generating hand model...');
     Th = eye(4);
     Th(1:3,4) = [0;0;0];
@@ -32,15 +32,15 @@ end
 
 mySGplotHand(hand);
 %% Create Object Models
-type = 'sph';
+type = 'cyl';
 switch type
     case 'sph'
-        Param.radius = 20;
+        Param.radius = 25;
         transl = [0;0;0];
         object = sphereObject(transl, Param.radius);
     case 'cyl'
-        Param.radius = 15;
-        Param.height = 50;
+        Param.radius = 25;
+        Param.height = 90;
         Param.roll = pi/4;
         Param.pitch = pi/6;
         Param.yaw = pi/13;
@@ -118,7 +118,7 @@ for i = 1:numel(osList)
     disp(file_title);
 
     % Solve grasping synthesis optimization problem
-    [hand, object, opt_soln, opt_cost, if_solution] = graspSingleObject(hand, object, recon, os_pair, false, false, file_title);
+    [hand, object, opt_soln, opt_cost, if_solution] = graspSingleObject(hand, object, recon, os_pair, true, false, file_title);
 
     % Visualize and save results
     if if_solution

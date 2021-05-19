@@ -83,7 +83,7 @@ for i = 1:N % this link, link_i
     link_j_list = {}; % information of all link_j that collide with link_i
     % for loop was i+1:N, I changed this to 1:N (also consider collisions
     % to previous links!
-    for j = 1:N % j: index of link that may collide with link i
+    for j = i+1:N % j: index of link that may collide with link i
         rmap_j = link_dict{j}.rmap;
         info_j = link_dict{j}.info;
         [jF, ~] = deal(info_j(1), info_j(2)); % jF: finger index, jL: link index

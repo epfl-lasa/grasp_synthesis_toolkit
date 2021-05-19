@@ -110,12 +110,17 @@ function [c, c_grad, param, ht_c, ht_c_grad] = cylNonLinIneqConst(hand, param)
     % Inequality Constraint 2: Collision Avoidance
     % Collision between object and included fingers
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    
+    
     fprintf('* [2/5] Collision avoidance (object vs. included fingers): ');
     % included finger: finger that between two active fingers, e.g. the middle finger is included if using index finger and ring finger for grasping
     f_idx_list = zeros(1,ncp); % list of finger index
     for i = 1:ncp
         f_idx_list(i) = os_info{i}(1);
     end
+    
+    % if the palm is in contact, remove the included fingers
+    f_idx_list = f_idx_list(f_idx_list ~= 0);
     incl_fingers = min(f_idx_list)+1:max(f_idx_list)-1; % indices of in-between fingers
   
     if ~isempty(incl_fingers) % in-between finger exists
@@ -129,7 +134,7 @@ function [c, c_grad, param, ht_c, ht_c_grad] = cylNonLinIneqConst(hand, param)
                 link_pos_this = link.symbolic.HT_this(1:3,4);
                 link_pos_next = link.symbolic.HT_next(1:3,4);
                 max_dist = 2*hand.hand_radius*cos(asin(gamma));
-                nb_link_pt = min([nCylinderAxis,ceil(link.L/max_dist]);
+                nb_link_pt = min([nCylinderAxis,ceil(link.L/max_dist)]);
                 link_pt_dist = 1/nb_link_pt;
                 link_pt_loc = link_pt_dist/2 + [0:nb_link_pt-1].*link_pt_dist; % in [0,1]
                 delta_pos = link_pos_next - link_pos_this; % symbolic
@@ -342,6 +347,8 @@ function [c, c_grad, param, ht_c, ht_c_grad] = cylNonLinIneqConst(hand, param)
     c_name{end+1} = 'Collision avoidance (this link vs. other links)';
     fprintf('%d\n', c_idx(end));
 
+
+%%% TODO remove this part
 
 
 %     fprintf('* [4/5] Collision avoidance (this link vs. other links): ');
