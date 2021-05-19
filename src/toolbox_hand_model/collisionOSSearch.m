@@ -46,20 +46,29 @@ for f = 1:nf % iterate over fingers
 
     elseif isa(temp_rmap,'cell') % rmap of finger, contains rmaps of links
         nl = length(temp_rmap)-1; % number of links (incl. virtual links), ignore the last one (fingertip, not real link)
-        for l = 1:nl
-            l_rmap = temp_rmap{l}; % j_map is a struct
-            if size(l_rmap.linkmesh,1) == 1 % when l==1, the virtual link, skip virtual link (link length = 0, results in a singular rmap, e.g. the 1st link in the model is virtual)
-                continue;
-            else
-                link_dict{end+1} = struct('rmap', l_rmap.linkmesh,... % l_rmap, struct, has fields: p, r, n, linkmesh, cnvxIndices, bndryIndices
-                    'info', [f,l]);
-                category_list{end+1} = [num2str(f),'-',num2str(l)];
-            end
+        
+        % first link is virtual, start the loop at link 2
+        for l=2:nl 
+            link_rmap = temp_rmap{l};
+            link_dict{end+1} = struct(  'rmap', link_rmap.linkmesh, ...
+                                        'info', [f, l]);
+            category_list{end+1} = [num2str(f), '-', num2str(l)];
         end
+        
+%         for l = 1:nl
+%             l_rmap = temp_rmap{l}; % j_map is a struct
+%             if size(l_rmap.linkmesh,1) == 1 % when l==1, the virtual link, skip virtual link (link length = 0, results in a singular rmap, e.g. the 1st link in the model is virtual)
+%                 continue;
+%             else
+%                 link_dict{end+1} = struct('rmap', l_rmap.linkmesh,... % l_rmap, struct, has fields: p, r, n, linkmesh, cnvxIndices, bndryIndices
+%                     'info', [f,l]);
+%                 category_list{end+1} = [num2str(f),'-',num2str(l)];
+%             end
+%         end
     end
 end
 
-N = numel(link_dict); % total number of link (+palm) rmaps, should be 5*3+1 = 16
+N = numel(link_dict); % total number of link (+palm) rmaps, should be 4*3+1 = 13
 CollMap = cell(1,N); % to save the collision info for each link
 existence_heatmap = zeros(N); % heatmap to save the number of collisions for each link
 
@@ -83,37 +92,42 @@ for i = 1:N % this link, link_i
     link_j_list = {}; % information of all link_j that collide with link_i
     % for loop was i+1:N, I changed this to 1:N (also consider collisions
     % to previous links!
-    for j = i+1:N % j: index of link that may collide with link i
+    for j = 1:N % j: index of link that may collide with link i
         rmap_j = link_dict{j}.rmap;
         info_j = link_dict{j}.info;
         [jF, ~] = deal(info_j(1), info_j(2)); % jF: finger index, jL: link index
-
-        % Extract data points on the boundary surface of the rmaps to
-        % accelerate computation
-        if ispalm(jF) % Simplify link mesh only if the link is not palm
+        if (jF == iF)
+            % skip links on the same finger
+            continue;
         else
-            k_j = boundary(rmap_j,1.0); % (N,3), 0: convex hull; default shrink factor S=0.5
-            if ~isempty(k_j)
-                uniqueIdx = unique(k_j(:));
-                rmap_j = rmap_j(uniqueIdx,:);
-                rmap_j = unique(rmap_j,'rows');
-                clear k_j;
+            % Extract data points on the boundary surface of the rmaps to
+            % accelerate computation
+            if ispalm(jF) % Simplify link mesh only if the link is not palm
+            else
+                k_j = boundary(rmap_j,1.0); % (N,3), 0: convex hull; default shrink factor S=0.5
+                if ~isempty(k_j)
+                    uniqueIdx = unique(k_j(:));
+                    rmap_j = rmap_j(uniqueIdx,:);
+                    rmap_j = unique(rmap_j,'rows');
+                    clear k_j;
+                end
             end
-        end
 
-        % Notice that consecutive links cannot be skipped. Could overlap in
-        % grasping planning.
-        dist = pdist2(rmap_i, rmap_j, 'euclidean');
-        min_dist = min(dist(:));
+            % Notice that consecutive links cannot be skipped. Could overlap in
+            % grasping planning.
+            dist = pdist2(rmap_i, rmap_j, 'euclidean');
+            min_dist = min(dist(:));
 
-        if min_dist < d % minimum distance between rmaps is larger than 2*link radius, potential collision exists
-            existence_heatmap(i,j) = d - min_dist; % the lighter the color, the more likely the collision
-            link_j_list{end+1} = info_j; % (1,2) add jth link to the collision list of i
+            if min_dist < d % minimum distance between rmaps is larger than 2*link radius, potential collision exists
+                existence_heatmap(i,j) = d - min_dist; % the lighter the color, the more likely the collision
+                link_j_list{end+1} = info_j; % (1,2) add jth link to the collision list of i
+            end
+            clear('rmap_j');
         end
-        clear('rmap_j');
     end
     clear('rmap_i');
 
+    % store the collision list
     if ispalm(iF)
         hand.P.collList = link_j_list;
     else

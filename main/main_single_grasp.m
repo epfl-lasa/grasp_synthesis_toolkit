@@ -118,7 +118,7 @@ for i = 1:numel(osList)
     disp(file_title);
 
     % Solve grasping synthesis optimization problem
-    [hand, object, opt_soln, opt_cost, if_solution] = graspSingleObject(hand, object, recon, os_pair, true, false, file_title);
+    [hand, object, opt_soln, opt_cost, if_solution] = graspSingleObject(hand, object, recon, os_pair, false, false, file_title);
 
     % Visualize and save results
     if if_solution

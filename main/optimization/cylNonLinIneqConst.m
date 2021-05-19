@@ -22,6 +22,17 @@ function [c, c_grad, param, ht_c, ht_c_grad] = cylNonLinIneqConst(hand, param)
     palm_point = mean(hand.P.points_inr,1).';     % point on inner palm surface [3 x 1] array
     palm_normal = hand.P.contact.symbolic.n(:);   % palm surface normal
     
+    % build an array containing active finger indices
+    f_actv = zeros(1,ncp); 
+    for i = 1:ncp
+        f_actv(i) = os_info{i}(1);
+    end
+    % if the palm is in contact, remove the included fingers
+    f_actv = f_actv(f_actv ~= 0);
+    f_actv = min(f_actv):max(f_actv); % 
+    
+
+    
     fprintf('\nConstructing Nonl. Inequality Constraints: \n');
     c = sym([]); % to save the symbolic form
     c_idx = []; % to save idx of different constraints
@@ -114,14 +125,8 @@ function [c, c_grad, param, ht_c, ht_c_grad] = cylNonLinIneqConst(hand, param)
     
     fprintf('* [2/5] Collision avoidance (object vs. included fingers): ');
     % included finger: finger that between two active fingers, e.g. the middle finger is included if using index finger and ring finger for grasping
-    f_idx_list = zeros(1,ncp); % list of finger index
-    for i = 1:ncp
-        f_idx_list(i) = os_info{i}(1);
-    end
-    
-    % if the palm is in contact, remove the included fingers
-    f_idx_list = f_idx_list(f_idx_list ~= 0);
-    incl_fingers = min(f_idx_list)+1:max(f_idx_list)-1; % indices of in-between fingers
+
+    incl_fingers = min(f_actv)+1:max(f_actv)-1; % indices of in-between fingers
   
     if ~isempty(incl_fingers) % in-between finger exists
         for f = 1:length(incl_fingers)
@@ -202,6 +207,14 @@ function [c, c_grad, param, ht_c, ht_c_grad] = cylNonLinIneqConst(hand, param)
             for k = 1:numel(coll) % link `k` collides with palm
                 [k_f,k_l] = deal(coll{k}(1),coll{k}(2));
                 
+                % construct the constaints only w.r.t finger links
+                % that are active
+                if ((k_f < min(f_actv)) || (k_f > min(f_actv)))
+                    fprintf('Palm collision contains inactive link. Link is skipped.\n');
+                    continue;
+                end
+                
+                
                 % Check if current collision pair has already been detected previously
                 already_exist = false; % if the current pair of collision already exists in the collision pair
                 if ~isempty(all_collision_pairs)
@@ -228,7 +241,8 @@ function [c, c_grad, param, ht_c, ht_c_grad] = cylNonLinIneqConst(hand, param)
                         end
                         if k_l == find(hand.F{k_f}.idx_real_link,1) % if k_l is the first active link, skip it
                             continue;
-                        end
+                        end                        
+                        
                         x1 = link_k.symbolic.HT_this(1:3,4); % end points of collided link
                         x2 = link_k.symbolic.HT_next(1:3,4);
 
@@ -245,6 +259,7 @@ function [c, c_grad, param, ht_c, ht_c_grad] = cylNonLinIneqConst(hand, param)
                             subValues = hand.q(ismember(dict_q,subKeys)); % subs them using hand default joint angle values
                             dist2palm = subs(dist2palm, subKeys, subValues.');
                         end
+
                         c(end+1 : end+numel(dist2palm)) = link_k.radius - dist2palm;
                         
                         all_collision_pairs{end+1} = [idx_f,idx_l; k_f,k_l]; % Add current collision pair to the detected list
@@ -275,11 +290,7 @@ function [c, c_grad, param, ht_c, ht_c_grad] = cylNonLinIneqConst(hand, param)
 
                 for k = 1:numel(coll) % link k collides with current link
                     [k_f,k_l] = deal(coll{k}(1),coll{k}(2));
-
-                    if k_f == idx_f % skip link on the same finger
-                        continue;
-                    end
-
+                    
                     if abs(k_f-idx_f)>1 % skip non-adjacent fingers
                         continue;
                     end
@@ -302,7 +313,10 @@ function [c, c_grad, param, ht_c, ht_c_grad] = cylNonLinIneqConst(hand, param)
                             if idx_p == find(hand.F{idx_f}.idx_real_link,1) % if idx_p is the first active link, skip it
                                 continue;
                             end
-
+                            
+                            % the error probably comes from here: skip
+                            % dist2palm for link 2
+                            
                             nSamples = min([nCylinderAxis, ceil(link.L/(link.radius*2))]);
                             dist2palm = sym(zeros(1,nSamples));
                             for d = 0:(nSamples-1)
