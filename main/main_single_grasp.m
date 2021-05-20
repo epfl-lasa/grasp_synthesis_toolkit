@@ -5,6 +5,8 @@ setup_path;
 % generate problem configuration
 setup_problem_config;
 
+%load objects_experience.mat
+
 %% Configuration of experiment
 recon.hand_model = true; % reconstruct hand models [TODO] remove this after changes applied
 recon.object_model = true; % reconstruct object models
@@ -32,7 +34,7 @@ end
 
 mySGplotHand(hand);
 %% Create Object Models
-type = 'comp';
+type = 'cyl';
 switch type
     case 'sph'
         Param.radius = 25;
@@ -67,6 +69,8 @@ switch type
         mySGplotHand(hand);
         plotCompObject(object,false);
 end
+
+%object = big_cyl;
 %% Optimization
 
 % List of Opposition Space pairs, used as candidates for grasping.

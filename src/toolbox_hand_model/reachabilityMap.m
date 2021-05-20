@@ -144,9 +144,10 @@ function [map_hand, robot] = reachabilityMap(robot, fngrs2spl, if_plot, if_save)
             end
 
             if (finger.idx_real_link(l) && isempty(k)) || (~finger.idx_real_link(l)) % only for real link
-                fprintf('Finger %d Link %d does not have convexhull.\n', f, l);
-                fprintf('* isempty(k): %d\n', isempty(k));
-                fprintf('* real link: %d\n', finger.idx_real_link(l));
+                % reduce this print to 1 line
+                fprintf('Finger %d Link %d: has boundary: %d, is a real link: %d\n', f, l, isempty(k), finger.idx_real_link(l));
+                %fprintf('* isempty(k): %d\n', isempty(k));
+                %fprintf('* real link: %d\n', finger.idx_real_link(l));
             end
 
             map_link.linkmesh = linkmesh; % the mesh grid of all reachable positions of the link

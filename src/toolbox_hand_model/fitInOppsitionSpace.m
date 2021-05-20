@@ -208,6 +208,6 @@ end
 
 if if_save
     save(['../database/opposition_space_',num2str(object.radius),'.mat'],'OS');
-    fprintf('File saved: opposition_space_%d.mat\n',object.radius);
+    fprintf(['File saved: opposition_space_', num2str(object.radius)]);
 end
 end

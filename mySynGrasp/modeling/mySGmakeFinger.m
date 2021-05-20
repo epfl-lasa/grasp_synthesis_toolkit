@@ -61,6 +61,7 @@ function finger = mySGmakeFinger(DHpars, base, q, idx,...
     if isempty(finger.symbolic)
         finger = calcSymbolicLinkTransformation(finger);
     end
+    fprintf('Generated functions for position, fingertip and transformations\n');
 
     finger = moveFinger(finger, q, eval_type); % This is the initial moving of fingers
 end

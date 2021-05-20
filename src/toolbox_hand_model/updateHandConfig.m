@@ -52,7 +52,7 @@ end
 % Step 4: substitute values of the deactivated joints in symbolic fields,
 % such as contact points 'Cp' and contact normal 'Cn', using the
 % corresponding values in X_sol. Indexing via X_key.
-disp('  Updating symbolic expressions...');
+disp('  Updating symbolic expressions for hand configuration...');
 
 %%% Notice that any symbolic expression that has not been used in
 %%% calculating the constrains / objective function can be ignored and

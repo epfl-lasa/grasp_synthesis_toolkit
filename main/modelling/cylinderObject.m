@@ -74,6 +74,13 @@ symAxPtArrayHt = symHT*[symAxPtArrayRot;ones(1,nPoints)];
 % [old] symAxPtArrayHt = Htr*[symAxPtArrayRot;ones(1,nPoints)];
 symAxPtArray = symAxPtArrayHt(1:3,:);                  % dim (3 x n)
 
+endpoints = [zeros(2,2),[h/2;-h/2]]; % shape 2 x 3
+endpoints = center + rotatepoint(quat, endpoints).'; % shape (3 x 2)
+
+symEndpoints = rotate_point(sym([zeros(2,2);[h/2, -h/2]]),symQuat);
+symEndpoints = symEndpoints + symCtr;
+
+
 % equidistant points (numerical)
 axPtArray = [zeros(nPoints,2),distArray.']; % (N x 3)
 axPtArray = center + rotatepoint(quat,axPtArray).';  % (3 x N)
@@ -110,6 +117,9 @@ Cylinder.type = 'cyl';
 Cylinder.res = res;
 Cylinder.axPtArray = axPtArray;
 
+Cylinder.c0 = endpoints(:,1);
+Cylinder.c1 = endpoints(:,2);
+
 if nargin >1 
     % if the solution is already calculated,
     % store the projected contact points to display
@@ -123,3 +133,6 @@ Cylinder.sym.quat = symQuat;         % q1,q2,q3,q4 (for optimization)
 Cylinder.sym.n = symNormal;  % axis of the cylinder
 Cylinder.sym.axisPtArray = symAxPtArray;        % (3 x n) coordinates of equidistant spheres
 Cylinder.sym.cpProj = cp_proj;   % (3 x ncp) projected CP (symbolic)
+
+Cylinder.sym.c0 = symEndpoints(:,1);
+Cylinder.sym.c1 = symEndpoints(:,2);

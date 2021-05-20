@@ -82,6 +82,8 @@ axPtArray = center + rotatepoint(quat,axPtArray).';  % (3 x N)
 symMu = sym('mu',[2,1]);
 symNormal = rotate_point([0;0;1],symQuat); % normal expressed in symbolic form
 
+
+
 cp_proj = sym([]);
 
 for i=1:2
@@ -106,6 +108,21 @@ symSphCtr = sym([]);
 for i=1:length(Param.sphereRadius)
     symSphCtr(:,i) = symCtr + rotate_point(Param.sphereCenter(i,:).',symQuat);
 end
+
+% computation of the CoM
+v_cyl = rad^2*pi*h;
+v_sph = zeros(1,length(Param.sphereRadius));
+for i=1:length(Param.sphereRadius)
+    v_sph(i) = 4/3*Param.sphereRadius(i)^3*pi;
+end
+v_total = v_cyl + sum(v_sph); % total volume of the object
+        
+% object center offset
+obj_ctr = [0;0;0]; % cylinder is always centered
+for i=1:length(Param.sphereRadius)
+    obj_ctr = obj_ctr + v_sph(i)/v_total * Param.sphereCenter(i,:).';
+end
+symObjCtr = symCtr + rotate_point(obj_ctr, symQuat);
 
 %% constant fields 
 % (used as initial values for optimization)
@@ -143,3 +160,4 @@ object.sym.axisPtArray = symAxPtArray;        % (3 x n) coordinates of equidista
 object.sym.cpProj = cp_proj;   % (3 x ncp) projected CP (symbolic)
 
 object.sym.sphereCenter = symSphCtr;
+object.sym.com = symObjCtr;

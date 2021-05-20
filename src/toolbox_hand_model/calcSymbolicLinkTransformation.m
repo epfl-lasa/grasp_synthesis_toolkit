@@ -97,6 +97,8 @@ function finger = calcSymbolicLinkTransformation(finger)
             'File',[database_dir, '/symbolic_functions/','F',num2str(finger.idx),'L',num2str(l),'_HT_this'],'Vars',Q);
         matlabFunction(referenceJoint,...
             'File',[database_dir, '/symbolic_functions/','F',num2str(finger.idx),'L',num2str(l),'_HT_next'],'Vars',Q);
+        
+        
 
         finger.Link{l}.contact.symbolic.HTr2cp = HTr2cp;
         finger.Link{l}.contact.symbolic.HTr2lc = HTr2lc;
@@ -160,7 +162,7 @@ function finger = calcSymbolicLinkTransformation(finger)
         'File',[database_dir, '/symbolic_functions/','F',num2str(finger.idx),'_tip'],'Vars',Q);
     matlabFunction(symbolic.joints_pos,...
         'File',[database_dir, '/symbolic_functions/','F',num2str(finger.idx),'_joints_pos'],'Vars',Q);
-
+    
     finger.symbolic = symbolic;
     % fprintf('Symbolic expression constructed for finger: %d\n', finger.idx);
 end

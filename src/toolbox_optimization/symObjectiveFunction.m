@@ -37,7 +37,13 @@ function [obj, obj_grad, ht_obj, ht_obj_grad] = symObjectiveFunction(hand, param
     end
 
     %%% Cost 1: Force closure cost
-    obj_cntr = [sym('x'),sym('y'),sym('z')]; % (1,3)
+    if strcmp(param.obj.type,'comp')
+        
+        obj_ctr = param.obj.sym.com;
+       
+    else
+        obj_cntr = [sym('x'),sym('y'),sym('z')]; % (1,3)
+    end
     cpt = Cp(1,:); % (1,3) contact point thumb
     ft = obj_cntr - cpt; % (1,3) surface normal at contact point. t: thumb, f direction, pointing towards object center
     cpi = Cp(2,:); % (1,3) contact point index

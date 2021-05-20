@@ -35,8 +35,8 @@ if isfile('../database/symbolic_functions/objfun_grad.m')
 end
 
 if functions_exist
-    fprintf('\nDeleted symbolic functions\n')
+    fprintf('\nDeleted objective and constraint functions\n')
 else
-    fprintf('\nNo symbolic functions to delete\n')
+    fprintf('\nNo objective and constraint to delete\n')
 end
 

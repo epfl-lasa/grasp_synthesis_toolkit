@@ -64,32 +64,40 @@ function [c, c_grad, param, ht_c, ht_c_grad] = cylNonLinIneqConst(hand, param)
             if ~link.is_real
                 continue;       % pass if the link is not real
             end
-            % compute number of points to approximate the link
-            max_dist = 2*hand.hand_radius*cos(asin(gamma));
-            nb_link_pt = min([nCylinderAxis,ceil(link.L/max_dist)]);
-            % select at most nCylinderAxis points
-            % nb_link_pt = ceil(link.L/(2*hand.hand_radius*sqrt(eta^2-1)));
-            % TODO remove one of these lines
-            link_pt_dist = 1/nb_link_pt; % distance between link points
-
-            % compute uniform points in range [0, L] along the link
-            link_pt_loc = link_pt_dist/2 + [0:nb_link_pt-1].*link_pt_dist;
-
-            % compute a vector along the link
-            link_pos_this = link.symbolic.HT_this(1:3,4);
-            link_pos_next = link.symbolic.HT_next(1:3,4);
-            delta_pos = link_pos_next - link_pos_this;
-
-            for m=1:nb_link_pt % loop over the link
-                for  n=1:nb_axpt % loop over the cylinder object
-                    % compute the point on the link
-                    link_pt = link_pos_this + link_pt_loc(m)*delta_pos;
-                    obj_pt = obj_axpt(:,n);
-                    % define the constraint using squared norms
-                    c_ij = (link_r + obj_r)^2 - dot(link_pt - obj_pt,link_pt - obj_pt);
-                    %c_ij = link_r*eta + obj_r - norm(link_pos-obj_axpt(:,k),2);
-                    c(end+1) = c_ij;
-                end
+            
+            % remove constraint over spheres over a link
+            
+%             % compute number of points to approximate the link
+%             max_dist = 2*hand.hand_radius*cos(asin(gamma));
+%             nb_link_pt = min([nCylinderAxis,ceil(link.L/max_dist)]);
+%             % select at most nCylinderAxis points
+%             % nb_link_pt = ceil(link.L/(2*hand.hand_radius*sqrt(eta^2-1)));
+%             % TODO remove one of these lines
+%             link_pt_dist = 1/nb_link_pt; % distance between link points
+% 
+%             % compute uniform points in range [0, L] along the link
+%             link_pt_loc = link_pt_dist/2 + [0:nb_link_pt-1].*link_pt_dist;
+% 
+%             % compute a vector along the link
+%             link_pos_this = link.symbolic.HT_this(1:3,4);
+%             link_pos_next = link.symbolic.HT_next(1:3,4);
+%             delta_pos = link_pos_next - link_pos_this;
+%             for m=1:nb_link_pt % loop over the link
+%                 for  n=1:nb_axpt % loop over the cylinder object
+%                     % compute the point on the link
+%                     link_pt = link_pos_this + link_pt_loc(m)*delta_pos;
+%                     obj_pt = obj_axpt(:,n);
+%                     % define the constraint using squared norms
+%                     c_ij = (link_r + obj_r)^2 - dot(link_pt - obj_pt,link_pt - obj_pt);
+%                     %c_ij = link_r*eta + obj_r - norm(link_pos-obj_axpt(:,k),2);
+%                     c(end+1) = c_ij;
+%                 end
+%             end
+            for n=1:nb_axpt
+                obj_pt = obj_axpt(:,n);
+                dist = distToLink(link, obj_pt);
+                c_ij = link_r + obj_r - dist;
+                c(end+1) = c_ij;
             end
         end
     end
@@ -116,23 +124,29 @@ function [c, c_grad, param, ht_c, ht_c_grad] = cylNonLinIneqConst(hand, param)
                 if ~link.is_real % skip virtual links
                     continue;
                 end
-                link_pos_this = link.symbolic.HT_this(1:3,4);
-                link_pos_next = link.symbolic.HT_next(1:3,4);
-                max_dist = 2*hand.hand_radius*cos(asin(gamma));
-                nb_link_pt = min([nCylinderAxis,ceil(link.L/max_dist)]);
-                link_pt_dist = 1/nb_link_pt;
-                link_pt_loc = link_pt_dist/2 + [0:nb_link_pt-1].*link_pt_dist; % in [0,1]
-                delta_pos = link_pos_next - link_pos_this; % symbolic
-                for m=1:nb_link_pt      % loop over link points
-                    for n=1:nb_axpt     % loop over object axis points
-                        link_pt = link_pos_this + link_pt_loc(m)*delta_pos;
-                        obj_pt = obj_axpt(:,n);
-                        % use squared norm for the constraint
-                        c_ij = (link_r + obj_r)^2 - dot(link_pt - obj_pt,link_pt - obj_pt);
-                        %c_ij = (link_r + obj_r)^2 - (link_pt - obj_pt).' * (link_pt - obj_pt);
-                        c(end+1) = c_ij;
-                    end
-                end
+%                 link_pos_this = link.symbolic.HT_this(1:3,4);
+%                 link_pos_next = link.symbolic.HT_next(1:3,4);
+%                 max_dist = 2*hand.hand_radius*cos(asin(gamma));
+%                 nb_link_pt = min([nCylinderAxis,ceil(link.L/max_dist)]);
+%                 link_pt_dist = 1/nb_link_pt;
+%                 link_pt_loc = link_pt_dist/2 + [0:nb_link_pt-1].*link_pt_dist; % in [0,1]
+%                 delta_pos = link_pos_next - link_pos_this; % symbolic
+%                 for m=1:nb_link_pt      % loop over link points
+%                     for n=1:nb_axpt     % loop over object axis points
+%                         link_pt = link_pos_this + link_pt_loc(m)*delta_pos;
+%                         obj_pt = obj_axpt(:,n);
+%                         % use squared norm for the constraint
+%                         c_ij = (link_r + obj_r)^2 - dot(link_pt - obj_pt,link_pt - obj_pt);
+%                         %c_ij = (link_r + obj_r)^2 - (link_pt - obj_pt).' * (link_pt - obj_pt);
+%                         c(end+1) = c_ij;
+%                     end
+%                 end
+                  for n=1:nb_axpt
+                      obj_pt = obj_axpt(:,n);
+                      dist = distToLink(link, obj_pt);
+                      c_ij = link_r + obj_r - dist;
+                      c(end+1) = c_ij;
+                  end
             end
         end
     end
@@ -352,27 +366,53 @@ function [c, c_grad, param, ht_c, ht_c_grad] = cylNonLinIneqConst(hand, param)
                 % THIS is a cylinder, OTHER is a sphere
                 sph_oc = obj_i.ctr;
                 sph_radius = obj_i.radius;
-                % add a constraint for each of the n axis points
-                nb_axpt_this = size(obj_axpt,2); % obj_axpt is (3 x n_points)
-                for j = 1:nb_axpt
-                    axis_point = obj_axpt(:,k);
-                    dist = norm(sph_oc-axis_point);
-                    c(end+1) = sph_radius + obj_r - dist;
-                end
+                                
+%                 % add a constraint for each of the n axis points
+%                 nb_axpt_this = size(obj_axpt,2); % obj_axpt is (3 x n_points)
+%                 for j = 1:nb_axpt
+%                     axis_point = obj_axpt(:,k);
+%                     dist = norm(sph_oc-axis_point);
+%                     c(end+1) = sph_radius + obj_r - dist;
+%                 end
+                
+                  % TEST if this works with simplified constraint
+                dist = distToObj(object, sph_oc);
+                c(end+1) = sph_radius + obj_r - dist;
+                
             elseif strcmp(obj_i.type,'cyl')
-                % THIS is a cylinder and OTHER is a cylinder
+                
+                % TEST IF THIS WORKS WITH ONLY 2*N constraints
+%                 % THIS is a cylinder and OTHER is a cylinder
+%                 cyl_radius = obj_i.radius;
+%                 cyl_axpt = obj_i.axPtArray;
+%                 nb_axpt_other = size(cyl_axpt,2);
+%                 nb_axpt_this = size(obj_axpt,2); % obj_axpt is (3 x n_points)
+%                 for k=1:nb_axpt_other
+%                     for j=1:nb_axpt_this
+%                         axis_point_other = cyl_axpt(:,k);
+%                         axis_point_this = obj_axpt(:,j);
+%                         dist = norm(axis_point_this - axis_point_other);
+%                         c(end+1) = cyl_radius + obj_r - dist;
+%                     end
+%                 end
+                
+                % constraint sphere approx. of THIS wrt axis of other object 
+                % (other object with fixed axis)
                 cyl_radius = obj_i.radius;
                 cyl_axpt = obj_i.axPtArray;
                 nb_axpt_other = size(cyl_axpt,2);
-                nb_axpt_this = size(obj_axpt,2); % obj_axpt is (3 x n_points)
                 for k=1:nb_axpt_other
-                    for j=1:nb_axpt_this
-                        axis_point_other = cyl_axpt(:,k);
-                        axis_point_this = obj_axpt(:,j);
-                        dist = norm(axis_point_this - axis_point_other);
-                        c(end+1) = cyl_radius + obj_r - dist;
-                    end
+                    axis_point_other = cyl_axpt(:,k);
+                    dist = distToObj(object, axis_point_other, 'symbolic');
+                    c(end+1) = cyl_radius + obj_r - dist;
                 end
+                % constraint for this obj with 
+                for k=1:nb_axpt
+                    axis_point_this = obj_axpt(:,k);
+                    dist = distToObj(obj_i, axis_point_this, 'fixed');
+                    c(end+1) = cyl_radius + obj_r - dist;
+                end
+                
             elseif strcmp(obj_i.type,'comp')
                 comp_radius = obj_i.radius;
                 comp_axpt = obj_i.axPtArray;

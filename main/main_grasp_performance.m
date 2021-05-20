@@ -130,6 +130,8 @@ for i = 1:numel(os_list) % loop over os_pair
     recon.rmap = true; % reconstruct reachability maps
     recon.os = true; % reconstruct opposition space
     
+    
+    
     for j=1:nb_objects
         experiment_cnt = (i-1)*nb_objects + j;
         object = object_list{(i-1)*nb_objects + j};
@@ -172,6 +174,7 @@ for i = 1:numel(os_list) % loop over os_pair
             success = 0;
         end
         
+        % write results to logfile
         if strcmp(object.type, 'sph')
             fprintf(logfile, '%s,F%dL%d,F%dL%d,%5.1f,%d,%8.2f,%d,%d,%5.0f,%5.0f\n',object.type, os_pair{1}(1),...
                     os_pair{1}(2),os_pair{2}(1),os_pair{2}(2), object.radius, success,...
@@ -183,10 +186,12 @@ for i = 1:numel(os_list) % loop over os_pair
         end
         
         %% Configuration of experiment
-        recon.hand_model = false; % reconstruct hand models [TODO] remove this after changes applied
+        recon.hand_model = false; % reconstruct hand models
         recon.object_model = false; % reconstruct object models
         recon.rmap = false; % reconstruct reachability maps
         recon.os = false; % reconstruct opposition space
     end
+    
+    
 end
 fclose(logfile);
