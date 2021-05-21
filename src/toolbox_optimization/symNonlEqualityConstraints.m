@@ -25,7 +25,7 @@ function [ceq, ceq_grad, param, ht_ceq, ht_ceq_grad] = symNonlEqualityConstraint
     ceq_name = {};
     
     for i = 1:ncp
-        [idx_f,idx_l] = deal(os_info{i}(1),os_info{i}(2));
+        [idx_f,idx_l] = deal(os_info(i,1),os_info(i,2));
         if ispalm(idx_f) % This is the palm
             pc = hand.P.contact.symbolic.p; % palm contact
             %%% Notice that cp_dist is squared distance!!!
@@ -55,7 +55,7 @@ function [ceq, ceq_grad, param, ht_ceq, ht_ceq_grad] = symNonlEqualityConstraint
     c = sym('c%d%d',[ncp,k]); % coefficients of friction cone edges in solving the linear programming problem
     c = reshape(c.',[],1);
     for i = 1:ncp
-        [idx_f,idx_l] = deal(os_info{i}(1),os_info{i}(2));
+        [idx_f,idx_l] = deal(os_info(i,1),os_info(i,2));
         if ispalm(idx_f) % palm
             FC_i = hand.P.contact.symbolic.FC;
             TC_i = hand.P.contact.symbolic.TC;

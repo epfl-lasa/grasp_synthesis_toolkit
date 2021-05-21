@@ -54,7 +54,7 @@ tag = '';
 ncpf = ncp; % number of contacts on fingers (exclude contact on palms)
 
 for i = 1:ncp
-    [idx_f,idx_l] = deal(os_info{i}(1),os_info{i}(2));
+    [idx_f,idx_l] = deal(os_info(i,1),os_info(i,2));
 
     if ispalm(idx_f) % palm is in the os list
         pactv = 1; % set palm as flag
@@ -154,7 +154,7 @@ key_alp = sym(zeros(ncpf,1));
 key_pvec = [sym('vx');sym('vy')]; % translation vector of palm on surface
 
 for i = 1:ncp % filter out the idx of used phi and alp
-    [idx_f,idx_l] = deal(os_info{i}(1),os_info{i}(2)); % index of finger that establishes contact and link in the finger
+    [idx_f,idx_l] = deal(os_info(i,1),os_info(i,2)); % index of finger that establishes contact and link in the finger
     if ispalm(idx_f)
         continue; % palm contact does not need alp and phi
     else

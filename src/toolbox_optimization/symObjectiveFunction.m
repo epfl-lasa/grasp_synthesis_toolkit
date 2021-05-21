@@ -21,7 +21,7 @@ function [obj, obj_grad, ht_obj, ht_obj_grad] = symObjectiveFunction(hand, param
     Cn = sym(zeros(ncp,3)); % symbolic expression of contact normal
     
     for i = 1:ncp
-        [idx_f,idx_l] = deal(os_info{i}(1),os_info{i}(2));
+        [idx_f,idx_l] = deal(os_info(i,1),os_info(i,2));
         if ispalm(idx_f) % contact on palm
             Cp(i,:) = hand.P.contact.symbolic.p; % contact point on palm
             Cn(i,:) = hand.P.contact.symbolic.n;

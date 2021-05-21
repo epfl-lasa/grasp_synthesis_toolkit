@@ -8,7 +8,7 @@
 %     * object: the object want to fit in
 % Output:
 %     * OS.os_rmap: {1,nos}, length is the number of opposition space. Each component of os_rmap contains all rmap groups of one opposition spaces.
-%     * OS.os_info: {1,nos}, contains information of the link os_rmap within each opposition space
+%     * OS.os_info: (nos,2), contains information of the link os_rmap within each opposition space
 
 function [OS, existence_heatmap] = fitInOppsitionSpace(hand, object, rmap, if_plot_trial, if_save)
 if nargin < 5
@@ -131,7 +131,7 @@ for i = 1:nm
             % existence_heatmap(i,j) = max_dist - min_dist; % use the maximum distance difference
             existence_heatmap(i,j) = max_dist;
             
-            data.os_info = {info_i, info_j};
+            data.os_info = [info_i(:).'; info_j(:).']; % [iF,iL; jF,jL]
             data.os_rmap = {rmap_i, rmap_j};
             data.os_dist = [min_dist, max_dist]; % min and max distance of this pair
             OS{end+1} = data;

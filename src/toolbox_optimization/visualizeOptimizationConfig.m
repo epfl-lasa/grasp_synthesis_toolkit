@@ -83,7 +83,7 @@ function visualizeOptimizationConfig(hand, object_list, X_sol, param, fig_title,
     
         W = zeros(6,ncp*k); % (6,ncp*k) to save the F-cone and T-cone of all contact points
         for i = 1:ncp
-            [idx_f,idx_l] = deal(os_info{i}(1),os_info{i}(2));
+            [idx_f,idx_l] = deal(os_info(i,1),os_info(i,2));
             if ispalm(idx_f) % this is palm
                 cp = pc; % assign palm contact to contact point
                 cn = sym(hand.P.contact.symbolic.n);

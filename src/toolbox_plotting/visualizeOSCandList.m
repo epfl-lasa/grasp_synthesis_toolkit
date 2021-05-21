@@ -37,9 +37,7 @@ for j = 1:numel(osCandList)
     fig_title = [identifier,'_os_candidate_',num2str(j)];
     
     for i = 1:numel(os_info)
-        temp_info = os_info{i};
-        
-        [idx_f,idx_l] = deal(temp_info(1),temp_info(2));
+        [idx_f,idx_l] = deal(os_info(i,1),os_info(i,2));
         fig_title(end+1:end+5) = ['F',num2str(idx_f),'L',num2str(idx_l),'_'];
         
         %%% Alternative

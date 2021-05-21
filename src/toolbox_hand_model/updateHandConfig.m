@@ -22,7 +22,7 @@ qactv = param.qactv_loop; % save active joints used in this loop
 
 % Step 1: activate the joints used for current contacts
 for i = 1:ncp
-    hand = activateLinkContact(hand, os_info{i}(1), os_info{i}(2));
+    hand = activateLinkContact(hand, os_info(i,1), os_info(i,2));
 end
 
 % Step 2: move hand joints
@@ -44,7 +44,7 @@ hand = mySGmoveHand(hand,q);
 % Notice that the joint active states of hand are used through the entire code
 
 for i = 1:ncp
-    hand = deactivateLinkContact(hand, os_info{i}(1), os_info{i}(2));
+    hand = deactivateLinkContact(hand, os_info(i,1), os_info(i,2));
 end
 
 % disp('Nach dem Update'); disp(hand.qactv);

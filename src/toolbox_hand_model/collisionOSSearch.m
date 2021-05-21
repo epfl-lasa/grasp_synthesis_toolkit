@@ -83,7 +83,7 @@ for i = 1:N % this link, link_i
         end
     end
 
-    link_j_list = {}; % information of all link_j that collide with link_i
+    link_j_list = []; % information of all link_j that collide with link_i. (K,2) each row contains a pair of [iF,iL] info of collided link.
     for j = 1:N % j: index of link that may collide with link i
         rmap_j = link_dict{j}.rmap;
         info_j = link_dict{j}.info;
@@ -112,7 +112,7 @@ for i = 1:N % this link, link_i
         
         if min_dist < d % minimum distance between rmaps is larger than 2*link radius, potential collision exists            
             existence_heatmap(i,j) = d - min_dist; % the lighter the color, the more likely the collision
-            link_j_list{end+1} = info_j; % (1,2) add jth link to the collision list of i
+            link_j_list = cat(1, link_j_list, info_j(:).'); % (1,2) add jth link to the collision list of i
         end
         clear('rmap_j');
     end

@@ -31,7 +31,7 @@ function [c, c_grad, param, ht_c, ht_c_grad] = symNonlInequalityConstraints(hand
 
     activeFingersSet = zeros(1,ncp); % Create a set to save the indices of all active fingers
     for i = 1:ncp
-        activeFingersSet(i) = os_info{i}(1);
+        activeFingersSet(i) = os_info(i,1);
     end
     
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -44,7 +44,7 @@ function [c, c_grad, param, ht_c, ht_c_grad] = symNonlInequalityConstraints(hand
     % formulated as nonl equality constraint.
     fprintf('* Collision avoidance (object vs. links): ');
     for i = 1:ncp
-        [idx_f, idx_l] = deal(os_info{i}(1),os_info{i}(2)); % index of finger and link
+        [idx_f, idx_l] = deal(os_info(i,1),os_info(i,2)); % index of finger and link
         if ispalm(idx_f)
             continue;
         else
@@ -74,7 +74,7 @@ function [c, c_grad, param, ht_c, ht_c_grad] = symNonlInequalityConstraints(hand
     % included finger: finger that between two active fingers, e.g. the middle finger is included if using index finger and ring finger for grasping
     f_idx_list = zeros(1,ncp); % list of finger index
     for i = 1:ncp
-        f_idx_list(i) = os_info{i}(1);
+        f_idx_list(i) = os_info(i,1);
     end
     f_idx_list(~f_idx_list) = []; % remove 0 (palm) from list
     n_diff = max(f_idx_list)-min(f_idx_list); % number of in-between fingers
@@ -119,7 +119,7 @@ function [c, c_grad, param, ht_c, ht_c_grad] = symNonlInequalityConstraints(hand
     fprintf('* Collision avoidance (this link vs. other links): ');
     all_collision_pairs = {};
     for i = 1:ncp
-        [idx_f,idx_l] = deal(os_info{i}(1),os_info{i}(2)); % This is the ith contacted link
+        [idx_f,idx_l] = deal(os_info(i,1),os_info(i,2)); % This is the ith contacted link
 
         %%% This link is palm. Calculate collision between palm and links in its collision list.
         if ispalm(idx_f)
@@ -131,7 +131,7 @@ function [c, c_grad, param, ht_c, ht_c_grad] = symNonlInequalityConstraints(hand
             end
             
             for k = 1:numel(coll) % link `k` collides with palm
-                [k_f,k_l] = deal(coll{k}(1),coll{k}(2));
+                [k_f,k_l] = deal(coll(k,1),coll(k,2));
 
                 if ~ismember(k_f, activeFingersSet) % check if k_f belongs to active finger
                     continue; % skip collisions between palm and inactive fingers
@@ -209,7 +209,7 @@ function [c, c_grad, param, ht_c, ht_c_grad] = symNonlInequalityConstraints(hand
                 x2 = link.symbolic.HT_next(1:3,4);
 
                 for k = 1:numel(coll) % link k collides with current link
-                    [k_f,k_l] = deal(coll{k}(1),coll{k}(2));
+                    [k_f,k_l] = deal(coll(k,1),coll(k,2));
 
                     if k_f == idx_f % skip link on the same finger
                         continue;
