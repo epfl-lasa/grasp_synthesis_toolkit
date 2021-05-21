@@ -9,11 +9,15 @@ fprintf('***********************************\n');
 init;
 problem_configuration;
 
-global useConstraintGradient
+%% Control variables
+global useConstraintGradient % If calculate gradient in optimization (true). For sqp, gradient is optional
 useConstraintGradient = false;
 
-global useObjectiveGradient
+global useObjectiveGradient % If calculate gradient in optimization (true). For sqp, gradient is optional
 useObjectiveGradient = false;
+
+global activateAllJoints % Set `true` to use all finger joints as optimization variables
+activateAllJoints = false; 
 
 %% Configuration of experiment
 recon.hand_model = false; % reconstruct hand models
@@ -25,8 +29,8 @@ recon.os = true; % reconstruct opposition space
 if recon.hand_model
     disp('Generating hand model...');
     Th = eye(4);
-    Th(1:3,4) = [0;0;0];
-    Th(1:3,1:3) = eye(3);
+    Th(1:3,4) = [0;0;0]; % to specify in case needed
+    Th(1:3,1:3) = eye(3); % to specify in case needed
     
     % hand = mySGparadigmatic(Th); % hand.F{i}.idx_real_link: [0 1 1 1 0]
     hand = mySGallegroLeft(Th);

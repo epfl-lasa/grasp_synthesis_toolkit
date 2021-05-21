@@ -12,9 +12,15 @@ global useObjectiveGradient
 if isempty(useObjectiveGradient)
     useObjectiveGradient = false;
 end
+
 global useConstraintGradient
 if isempty(useConstraintGradient)
     useConstraintGradient = false;
+end
+
+global activateAllJoints
+if isempty(activateAllJoints)
+    activateAllJoints = false;
 end
 
 if nargin < 6
@@ -36,8 +42,13 @@ ncp = length(os_rmap); % number of contact points equals length of given opposit
 
 load('problem_config.mat');
 
-qactv_loop = false(1,numel(hand.qactv)); % Used in this loop. create a list of joint angle activation status, used in optimization problem later
-pactv = 0; % active flag of palm
+if activateAllJoints
+    qactv_loop = true(1,numel(hand.qactv));
+    pactv = 0; % active flag of palm
+else
+    qactv_loop = false(1,numel(hand.qactv)); % Used in this loop. create a list of joint angle activation status, used in optimization problem later
+    pactv = 1; % active flag of palm
+end
 
 tag = '';
 ncpf = ncp; % number of contacts on fingers (exclude contact on palms)
