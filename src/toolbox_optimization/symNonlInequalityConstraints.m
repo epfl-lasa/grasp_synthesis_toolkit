@@ -1,5 +1,11 @@
 % Obtain the symbolic form of nonlinear inequality constraints
 function [c, c_grad, param, ht_c, ht_c_grad] = symNonlInequalityConstraints(hand, param)
+
+    global useConstraintGradient
+    if isempty(useConstraintGradient)
+        useConstraintGradient = false;
+    end
+
     os_info = param.os.os_info;
     
     obj_r = param.object_radius; % object radius
@@ -296,9 +302,11 @@ function [c, c_grad, param, ht_c, ht_c_grad] = symNonlInequalityConstraints(hand
     %%% Calculate gradient Gradient follows the format. Notice that this is the TRANSPOSE of Jacobian!
     % [dc1/dx1, dc2/dx1;...
     %  dc1/dx2, dc2/dx2];
-    c_grad = transpose(jacobian(c, X_key));
+    if useConstraintGradient
+        c_grad = transpose(jacobian(c, X_key));
+        matlabFunction(c_grad,'File','../database/symbolic_functions/nonl_c_grad','Vars',X_key,'Optimize',false);
+    end
     
-    matlabFunction(c_grad,'File','../database/symbolic_functions/nonl_c_grad','Vars',X_key,'Optimize',false);
     fprintf('  Total num. of nonl. inequality constraints: %d\n', numel(c));
     
     if nargout > 3 % create function handles

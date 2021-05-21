@@ -1,6 +1,11 @@
 function [obj, obj_grad, ht_obj, ht_obj_grad] = symObjectiveFunction(hand, param)
 % Reference: Predicting precision grip grasp locations on three-dimensional objects, Lina K. Klein et al. 2020
 
+    global useObjectiveGradient
+    if isempty(useObjectiveGradient)
+        useObjectiveGradient = false;
+    end
+
     fprintf('\nConstructing Objective Function: \n');
 
     os_info = param.os.os_info;
@@ -20,7 +25,6 @@ function [obj, obj_grad, ht_obj, ht_obj_grad] = symObjectiveFunction(hand, param
         if ispalm(idx_f) % contact on palm
             Cp(i,:) = hand.P.contact.symbolic.p; % contact point on palm
             Cn(i,:) = hand.P.contact.symbolic.n;
-            
         else
             finger = hand.F{idx_f};
             link = finger.Link{idx_l};
@@ -63,10 +67,12 @@ function [obj, obj_grad, ht_obj, ht_obj_grad] = symObjectiveFunction(hand, param
     matlabFunction(obj,'File','../database/symbolic_functions/objfun','Vars',X_key,'Optimize',false);
     
     %%% Calculate gradient and save
-    obj_grad = transpose(jacobian(obj,X_key));
-    matlabFunction(obj_grad,'File','../database/symbolic_functions/objfun_grad','Vars',X_key,'Optimize',false);
-    
-    disp('  Completed.');
+    if useObjectiveGradient
+        obj_grad = transpose(jacobian(obj,X_key));
+        matlabFunction(obj_grad,'File','../database/symbolic_functions/objfun_grad','Vars',X_key,'Optimize',false);
+    end
+
+    disp('  Objective function construction completed.');
 
     if nargout > 2
         ht_obj = matlabFunction(obj,'Vars',X_key);

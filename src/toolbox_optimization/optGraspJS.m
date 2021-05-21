@@ -8,6 +8,15 @@ function [X_sol, fval, param, if_solution] = optGraspJS(hand, object, os, graspe
 % grasped_objects: contains list of objects that have been grasped. these
 % objects are used in InequalityConstraints (collision avoidance between target object and grasped objects)
 
+global useObjectiveGradient
+if isempty(useObjectiveGradient)
+    useObjectiveGradient = false;
+end
+global useConstraintGradient
+if isempty(useConstraintGradient)
+    useConstraintGradient = false;
+end
+
 if nargin < 6
     if_save_trial = false;
 end
@@ -243,8 +252,8 @@ objfun = @(X)optGraspJS_objfun(X);
 %% Problem Configuration
 options = optimoptions('fmincon',...
     'Algorithm','sqp',...% 'active-set', 'interior-point', 'sqp', 'trust-region-reflective', or 'sqp-legacy'
-    'SpecifyObjectiveGradient',true,... % No gradient for objective function available
-    'SpecifyConstraintGradient',true,...
+    'SpecifyObjectiveGradient',useObjectiveGradient,... % No gradient for objective function available
+    'SpecifyConstraintGradient',useConstraintGradient,...
     'Display','final',...% 'off', 'none', 'notify', 'notify-detailed', 'final', 'final-detailed', 'iter', or 'iter-detailed'
     'FunctionTolerance',tol_fun,...
     'MaxFunctionEvaluations',max_fun_evals,...

@@ -9,8 +9,8 @@ function [c, ceq, dc, dceq] = optGraspJS_nonlcon(X)
     c = nonl_c(Xcell{:}); % Inequality constraint
     ceq = nonl_ceq(Xcell{:}); % Equality constraint
 
-    if nargout > 2
-        dc = nonl_c_grad(Xcell{:}); % Gradient
+    if nargout > 2 % provide gradient
+        dc = nonl_c_grad(Xcell{:});
         dceq = nonl_ceq_grad(Xcell{:});
     end
 end

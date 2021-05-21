@@ -8,7 +8,7 @@ function [f, gradf] = optGraspJS_objfun(X)
     
     f = objfun(Xcell{:}); % Value
     
-    if nargout > 1
-        gradf = objfun_grad(Xcell{:}); % Gradient
+    if nargout > 1  % Gradient
+        gradf = objfun_grad(Xcell{:});
     end
 end

@@ -9,6 +9,12 @@ fprintf('***********************************\n');
 init;
 problem_configuration;
 
+global useConstraintGradient
+useConstraintGradient = false;
+
+global useObjectiveGradient
+useObjectiveGradient = false;
+
 %% Configuration of experiment
 recon.hand_model = false; % reconstruct hand models
 recon.object_model = true; % reconstruct object models
