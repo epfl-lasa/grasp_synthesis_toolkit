@@ -55,7 +55,7 @@ function [hand, object, opt_soln, opt_cost, if_solution] = mainSingleGrasping(ha
         fprintf('* Start Optimization Subproblem: %d / %d\n', k, numel(osCandList));
         os = osCandList{k};
 
-        fprintf('  Opp. Space: F%dL%d and F%dL%d\n', os.os_info(1,1),os.os_info(1,2),os.os_info(2,1),os.os_info(2,2));
+        fprintf('  Opp. Space: F%dL%d and F%dL%d\n', transpose(os.os_info));
 
         [X_sol, Cost, param, if_trial_success] = optGraspJS(hand, object, os); % This is the main function for optimal grasping synthesis
 
