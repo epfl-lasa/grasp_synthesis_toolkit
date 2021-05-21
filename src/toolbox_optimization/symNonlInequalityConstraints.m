@@ -28,6 +28,11 @@ function [c, c_grad, param, ht_c, ht_c_grad] = symNonlInequalityConstraints(hand
     pInr = mean(points_inr, 1); % center point on the palm surface
     assert(isequal(size(pInr),[1,3]));
     palm_normal = hand.P.contact.symbolic.n(:); % normal direction
+
+    activeFingersSet = zeros(1,ncp); % Create a set to save the indices of all active fingers
+    for i = 1:ncp
+        activeFingersSet(i) = os_info{i}(1);
+    end
     
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     % Inequality Constraint 1: Collision Avoidance
@@ -127,6 +132,10 @@ function [c, c_grad, param, ht_c, ht_c_grad] = symNonlInequalityConstraints(hand
             
             for k = 1:numel(coll) % link `k` collides with palm
                 [k_f,k_l] = deal(coll{k}(1),coll{k}(2));
+
+                if ~ismember(k_f, activeFingersSet) % check if k_f belongs to active finger
+                    continue; % skip collisions between palm and inactive fingers
+                end
                 
                 % Check if current collision pair has already been detected previously
                 already_exist = false; % if the current pair of collision already exists in the collision pair
