@@ -2,5 +2,7 @@
 *.un~
 *.asv
 *.fig
+*.csv
+*.txt
 
 database/
