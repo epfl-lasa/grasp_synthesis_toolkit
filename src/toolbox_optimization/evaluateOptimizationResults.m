@@ -51,11 +51,12 @@ else
         disp(ceq_name{i});
         ceq_temp = ceq(L+1: L+ceq_idx(i));
         if any(ceq_temp)
-            disp(ceq_temp);
+            fprintf("\t%7.2f", ceq_temp);
         else
             fprintf("\tConstraint violations: 0 of 0\n");
         end
         L = L + ceq_idx(i);
     end
+    fprintf("\n");
 end
 end

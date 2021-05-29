@@ -7,30 +7,20 @@ end
 if nargin < 3
     if_plot = true;
 end
-if nargin < 2
-    rmap = load('reachable_map.mat');
-    rmap = rmap.map_hand;
-    %{
-    rmap is organzied as a cell for each finger:
-    [{str(empty), str, str, str, str(tip)},... % rmap of finger 1: link 1, link 2,...
-    {...},... % finger 2
-    {...},... % finger 3
-    {...},... % finger 4
-    {...},... % finger 5
-    {str}] % palm
-    %}
-end
-if nargin < 1
-    models = load('models.mat');
-    hand = models.hand;
-end
 
-% param = load('problem_config.mat', 'hand_radius');
+% rmap is organzied as a cell for each finger:
+% [{str(empty), str, str, str, str(tip)},... % rmap of finger 1: link 1, link 2,...
+% {...},... % finger 2
+% {...},... % finger 3
+% {...},... % finger 4
+% {...},... % finger 5
+% {str}] % palm
+    
 hand_radius = hand.hand_radius;
 fprintf('* Construct collision map for hand radius: %d\n', hand_radius);
 
 d = hand_radius * 2; % collision distance is twice the link cylinder radius
-nf = numel(rmap); % 6, number of fingers (incl. palm)
+nf = numel(rmap); % 5, number of fingers (incl. palm)
 
 link_dict = {}; % save each one of the (1) link rmap, (2) link info, (3) link name, in a list
 % e.g. thumb-1st link (this one is in fact virtual), is [1,1], middle-2nd link is [3,2]
@@ -70,7 +60,7 @@ end
 
 N = numel(link_dict); % total number of link (+palm) rmaps, should be 4*3+1 = 13
 CollMap = cell(1,N); % to save the collision info for each link
-existence_heatmap = zeros(N); % heatmap to save the number of collisions for each link
+existence_heatmap = nan(N); % heatmap to save the number of collisions for each link
 
 for i = 1:N % this link, link_i
     rmap_i = link_dict{i}.rmap; % (N_samples,3)
@@ -117,10 +107,18 @@ for i = 1:N % this link, link_i
             % grasping planning.
             dist = pdist2(rmap_i, rmap_j, 'euclidean');
             min_dist = min(dist(:));
-
-            if min_dist < d % minimum distance between rmaps is larger than 2*link radius, potential collision exists
-                existence_heatmap(i,j) = d - min_dist; % the lighter the color, the more likely the collision
+            
+            if min_dist < d % minimum distance between rmaps is smaller than 2*link radius, potential collision exists
+                if i<=j
+                    existence_heatmap(i,j) = d - min_dist; % the lighter the color, the more likely the collision
+                else
+                    existence_heatmap(i,j) = nan;
+                end
                 link_j_list{end+1} = info_j; % (1,2) add jth link to the collision list of i
+            else
+                if i<=j
+                    existence_heatmap(i,j) = min_dist;
+                end
             end
             clear('rmap_j');
         end
@@ -147,8 +145,10 @@ if if_plot
     figure;
     heatmap(existence_heatmap,...
         'XData',category_list,...
-        'YData',category_list);
-    title(['Cartesian-space collision between links (r: ', num2str(hand_radius), ')']);
+        'YData',category_list,...
+        'MissingDataColor', 'w',...
+        'ColorLimits',[0 2*hand.hand_radius]);
+    title(['Minimal distance between links']);
     xlabel('Finger-Link pair');
     ylabel('Finger-Link pair');
     set(gca, 'FontSize', 14);

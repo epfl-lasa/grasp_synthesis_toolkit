@@ -173,7 +173,7 @@ function [map_hand, robot] = reachabilityMap(robot, fngrs2spl, if_plot, if_save)
     basepoints_xy = robot.T\robot.P.basepoints_h; % (4,N), project palm vertices back on XY plane (before multiply T)
     ppa = 1.5*1.5; % point per unit area (1x1)
     palmmesh_xy = polygrid(basepoints_xy(1,:).', basepoints_xy(2,:).', ppa); % (K,2) 100 points inside
-    palmmesh_xyz = cat(2,palmmesh_xy,ones(size(palmmesh_xy,1),1)); % (N,3) add Z = 0 coordinates
+    palmmesh_xyz = cat(2,palmmesh_xy,zeros(size(palmmesh_xy,1),1)); % (N,3) add Z = 0 coordinates
     palmmesh_xyz_h = cat(2,palmmesh_xyz,ones(size(palmmesh_xyz,1),1)); % (N,4), homogeneous coordinates
 
     palmmesh_h = robot.P.HTctr2inr*(robot.T*palmmesh_xyz_h.'); % first project back to palm plane, then project from palm to palm inner surface

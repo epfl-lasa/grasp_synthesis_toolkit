@@ -10,7 +10,7 @@
 %     * OS.os_rmap: {1,nos}, length is the number of opposition space. Each component of os_rmap contains all rmap groups of one opposition spaces.
 %     * OS.os_info: {1,nos}, contains information of the link os_rmap within each opposition space
 
-function [OS, existence_heatmap] = fitInOppsitionSpace(hand, object, rmap, if_plot_trial, if_save)
+function [OS, heatmap_maxdist,heatmap_mindist] = fitInOppsitionSpace(hand, object, rmap, if_plot_trial, if_save)
 if nargin < 5
     if_save = true;
 end
@@ -19,8 +19,8 @@ if nargin < 4
 end
 
 %% Step 1: Unpack data, make a list of all joint rmaps and construct link rmap
-nf = numel(rmap); % number of fingers, each finger has one rmap
-link_dict = {}; % save each one of the link rmap in a list, and also the corresponding information of each link rmap. e.g. thumb-1st link (this one is in fact virtual), is [1,1], middle-2nd link is [3,2]
+nf = numel(rmap);   % number of fingers and palm (5)
+link_dict = {};     % save each of the link rmap in a list, and also the corresponding information of each link rmap. e.g. thumb-1st link (this one is in fact virtual), is [1,1], middle-2nd link is [3,2]
 category_list = {}; % save the string of category name
 
 % fingerName = {'T','I','M','R','L'};
@@ -34,10 +34,10 @@ for f = 1:nf % iterate over fingers
     else
         nl = length(f_rmap)-1; % number of links (incl. virtual links), ignore the last one (fingertip, not real link)
         for l = 1:nl
-            l_rmap = f_rmap{l}; % l_map is a struct
-            if size(l_rmap.linkmesh,1) == 1 % skip degenerated link (link length = 0, results in a singular rmap, e.g. the 1st link in the model is virtual)
+            l_rmap = f_rmap{l};                 % l_map is a struct
+            if size(l_rmap.linkmesh,1) == 1     % skip degenerated link (link length = 0)
                 continue;
-            elseif ~hand.F{f}.Link{l}.is_real % skil virtual link
+            elseif ~hand.F{f}.Link{l}.is_real   % skip virtual link
                 continue;
             else
                 link_dict{end+1} = struct('mesh',l_rmap.linkmesh,... % l_rmap, struct, has fields: p, r, n, linkmesh, cnvxIndices, bndryIndices
@@ -58,10 +58,16 @@ cmap = distinguishable_colors(nm);
 fprintf('[fitInOppsitionSpace] Object radius: %d\n', object.radius);
 
 % d = 2*object.radius; % diameter of the object
-const = load('problem_config.mat','f_mu'); % load constant values from config files
-d = 2 * object.radius * cos(atan(const.f_mu)); % consider the influence of friction cone
+const = load('problem_config.mat','f_mu');      % load constant values from config files
+d = 2 * object.radius * cos(atan(const.f_mu));  % consider the influence of friction cone
 
-existence_heatmap = zeros(nm); % construct a heatmap to indicate the existence of opposition space between finger links
+
+% experimental
+d_min = 2*object.radius*cos(atan(const.f_mu)) + 2*hand.hand_radius*cos(atan(const.f_mu));
+d_max = 2*object.radius + 2* hand.hand_radius;
+
+heatmap_maxdist = nan(nm); % construct a heatmap to indicate the existence of opposition space between finger links
+heatmap_mindist = nan(nm);
 
 for i = 1:nm
     % Iterate over all rmaps, rmap_i
@@ -123,14 +129,16 @@ for i = 1:nm
         dist = pdist2(rmap_i, rmap_j, 'euclidean'); % taken elements as (1,N), point-wise distance
         max_dist = max(dist(:));
         min_dist = min(dist(:));
-
-        if (min_dist<=d) && (max_dist>=d) % Criterion for deciding if two rmaps can intersect the object (min_dist<d), and if they have enough space to fit in the object when they widely open (max_dist>d)
+        
+        if (min_dist < d_max) && (max_dist > d_min)
+        %if (min_dist<=d) && (max_dist>=d) % Criterion for deciding if two rmaps can intersect the object (min_dist<d), and if they have enough space to fit in the object when they widely open (max_dist>d)
             % fprintf('Exist feasible opposition space: F%dL%d and F%dL%d.\n',iF,iL,jF,jL); % F0L0 is palm
             if_exist = true;
 
             % existence_heatmap(i,j) = max_dist - min_dist; % use the maximum distance difference
-            existence_heatmap(i,j) = max_dist;
-
+            heatmap_maxdist(i,j) = max_dist;
+            heatmap_mindist(i,j) = min_dist;
+            
             data.os_info = {info_i, info_j};
             data.os_rmap = {rmap_i, rmap_j};
             data.os_dist = [min_dist, max_dist]; % min and max distance of this pair
@@ -141,49 +149,49 @@ for i = 1:nm
         end
 
         %% plotting all pairs of opposition spaces that can fit the object
-        if if_exist && if_plot_trial
-            figure, hold on;
-            [k_i,~] = boundary(rmap_i,0.5); % Surf the boundaries volume. s=0.5 is the default shrink factor
-            if numel(k_i)
-                trisurf(k_i,rmap_i(:,1),rmap_i(:,2),rmap_i(:,3),'FaceColor',cmap(i,:),'FaceAlpha',0.5); hold on;
-            else
-                scatter3(rmap_i(:,1),rmap_i(:,2),rmap_i(:,3),'MarkerFaceColor',cmap(i,:)); hold on;
-            end
-            [k_j,~] = boundary(rmap_j,0.5);
-            if numel(k_j)
-                trisurf(k_j,rmap_j(:,1),rmap_j(:,2),rmap_j(:,3),'FaceColor',cmap(j,:),'FaceAlpha',0.5); hold on;
-            else
-                scatter3(rmap_j(:,1),rmap_j(:,2),rmap_j(:,3),'MarkerFaceColor',cmap(j,:));
-            end
-
-            % Scatter the pairs of points that result in min and max distances
-            [min_i,min_j] = find(dist == min_dist);
-            if length(min_i) > 1 || length(min_j) > 1 % if multiple pairs of points have minimal distance, only use the first one, as an example for illustration
-                min_i = min_i(1);
-                min_j = min_j(1);
-            end
-            p_min_i = rmap_i(min_i,:);
-            p_min_j = rmap_j(min_j,:);
-            scatter3([p_min_i(1),p_min_j(1)],[p_min_i(2),p_min_j(2)],[p_min_i(3),p_min_j(3)],50,'k','filled');
-               plot3([p_min_i(1),p_min_j(1)],[p_min_i(2),p_min_j(2)],[p_min_i(3),p_min_j(3)],'Color','g','LineWidth',2.0);
-            hold on;
-
-            [max_i,max_j] = find(dist == max_dist);
-            if length(max_i) > 1 || length(max_j) > 1 % if multiple pairs of points have minimal distance, only use the first one, as an example for illustration
-                max_i = max_i(1);
-                max_j = max_j(1);
-            end
-            p_max_i = rmap_i(max_i,:);
-            p_max_j = rmap_j(max_j,:);
-            scatter3([p_max_i(1),p_max_j(1)],[p_max_i(2),p_max_j(2)],[p_max_i(3),p_max_j(3)],50,'k','filled');
-               plot3([p_max_i(1),p_max_j(1)],[p_max_i(2),p_max_j(2)],[p_max_i(3),p_max_j(3)],'Color','g','LineWidth',2.0);
-            hold on;
-
-            axis equal; grid on;
-            xlabel('X'); ylabel('Y'); zlabel('Z');
-            title(['F', num2str(iF), 'L', num2str(iL),' and F', num2str(jF), 'L', num2str(jL)]);
-            hold off;
-        end
+%         if if_exist && if_plot_trial
+%             figure, hold on;
+%             [k_i,~] = boundary(rmap_i,0.5); % Surf the boundaries volume. s=0.5 is the default shrink factor
+%             if numel(k_i)
+%                 trisurf(k_i,rmap_i(:,1),rmap_i(:,2),rmap_i(:,3),'FaceColor',cmap(i,:),'FaceAlpha',0.5); hold on;
+%             else
+%                 scatter3(rmap_i(:,1),rmap_i(:,2),rmap_i(:,3),'MarkerFaceColor',cmap(i,:)); hold on;
+%             end
+%             [k_j,~] = boundary(rmap_j,0.5);
+%             if numel(k_j)
+%                 trisurf(k_j,rmap_j(:,1),rmap_j(:,2),rmap_j(:,3),'FaceColor',cmap(j,:),'FaceAlpha',0.5); hold on;
+%             else
+%                 scatter3(rmap_j(:,1),rmap_j(:,2),rmap_j(:,3),'MarkerFaceColor',cmap(j,:));
+%             end
+% 
+%             % Scatter the pairs of points that result in min and max distances
+%             [min_i,min_j] = find(dist == min_dist);
+%             if length(min_i) > 1 || length(min_j) > 1 % if multiple pairs of points have minimal distance, only use the first one, as an example for illustration
+%                 min_i = min_i(1);
+%                 min_j = min_j(1);
+%             end
+%             p_min_i = rmap_i(min_i,:);
+%             p_min_j = rmap_j(min_j,:);
+%             scatter3([p_min_i(1),p_min_j(1)],[p_min_i(2),p_min_j(2)],[p_min_i(3),p_min_j(3)],50,'k','filled');
+%                plot3([p_min_i(1),p_min_j(1)],[p_min_i(2),p_min_j(2)],[p_min_i(3),p_min_j(3)],'Color','g','LineWidth',2.0);
+%             hold on;
+% 
+%             [max_i,max_j] = find(dist == max_dist);
+%             if length(max_i) > 1 || length(max_j) > 1 % if multiple pairs of points have minimal distance, only use the first one, as an example for illustration
+%                 max_i = max_i(1);
+%                 max_j = max_j(1);
+%             end
+%             p_max_i = rmap_i(max_i,:);
+%             p_max_j = rmap_j(max_j,:);
+%             scatter3([p_max_i(1),p_max_j(1)],[p_max_i(2),p_max_j(2)],[p_max_i(3),p_max_j(3)],50,'k','filled');
+%                plot3([p_max_i(1),p_max_j(1)],[p_max_i(2),p_max_j(2)],[p_max_i(3),p_max_j(3)],'Color','g','LineWidth',2.0);
+%             hold on;
+% 
+%             axis equal; grid on;
+%             xlabel('X'); ylabel('Y'); zlabel('Z');
+%             title(['F', num2str(iF), 'L', num2str(iL),' and F', num2str(jF), 'L', num2str(jL)]);
+%             hold off;
+%         end
         clear('rmap_j');
     end
     clear('rmap_i');
@@ -192,10 +200,30 @@ end
 %%% plot overview of existence
 if if_plot_trial
 figure;
-    heatmap(existence_heatmap,...
+    heatmap(heatmap_maxdist,...
         'XData',category_list,...
-        'YData',category_list);
-    title(['Existence of Opposition Space (r: ', num2str(object.radius), ')']);
+        'YData',category_list,...
+        'MissingDataColor', 'w',...
+        'ColorLimits',[0 2*hand.hand_radius],...
+        'CellLabelFormat', '%.1f');
+    title(['Opposition spaces: maximal distance (object radius ', num2str(object.radius),')']);
+    xlabel('Finger-Link pair');
+    ylabel('Finger-Link pair');
+    set(gca, 'FontSize', 14);
+
+    fprintf('[fitInOppsitionSpace] Total number of opposition spaces: %d\n', length(OS));
+    saveas(gca, ['../database/results/os_heatmap_',num2str(object.radius),'.jpg'], 'jpeg');
+    saveas(gca, ['../database/results/os_heatmap_',num2str(object.radius),'.eps'], 'epsc');
+    
+    
+figure;
+    heatmap(heatmap_mindist,...
+        'XData',category_list,...
+        'YData',category_list,...
+        'MissingDataColor', 'w',...
+        'ColorLimits',[0 2*hand.hand_radius],...
+        'CellLabelFormat', '%.1f');
+    title(['Opposition spaces: minimal distance (object radius ', num2str(object.radius),')']);
     xlabel('Finger-Link pair');
     ylabel('Finger-Link pair');
     set(gca, 'FontSize', 14);
