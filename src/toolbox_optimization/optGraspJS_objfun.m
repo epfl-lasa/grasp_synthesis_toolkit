@@ -1,5 +1,5 @@
 % This is the objective function for the grasp optimization in joint space
-function [f, gradf] = optGraspJS_objfun(X)
+function [f] = optGraspJS_objfun(X)
 
     if sum(isnan(X),'all')
         disp('X contains NaN.');
@@ -8,7 +8,7 @@ function [f, gradf] = optGraspJS_objfun(X)
     
     f = objfun(Xcell{:}); % Value
     
-    if nargout > 1
-        gradf = objfun_grad(Xcell{:}); % Gradient
-    end
+%     if nargout > 1
+%         gradf = objfun_grad(Xcell{:}); % Gradient
+%     end
 end

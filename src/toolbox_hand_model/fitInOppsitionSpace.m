@@ -205,11 +205,12 @@ figure;
         'YData',category_list,...
         'MissingDataColor', 'w',...
         'ColorLimits',[0 2*hand.hand_radius],...
-        'CellLabelFormat', '%.1f');
+        'CellLabelFormat', '%.1f',...
+        'Fontsize',18);
     title(['Opposition spaces: maximal distance (object radius ', num2str(object.radius),')']);
     xlabel('Finger-Link pair');
     ylabel('Finger-Link pair');
-    set(gca, 'FontSize', 14);
+    set(gca, 'FontSize', 18);
 
     fprintf('[fitInOppsitionSpace] Total number of opposition spaces: %d\n', length(OS));
     saveas(gca, ['../database/results/os_heatmap_',num2str(object.radius),'.jpg'], 'jpeg');
@@ -222,11 +223,12 @@ figure;
         'YData',category_list,...
         'MissingDataColor', 'w',...
         'ColorLimits',[0 2*hand.hand_radius],...
-        'CellLabelFormat', '%.1f');
+        'CellLabelFormat', '%.1f',...
+        'Fontsize',18)
     title(['Opposition spaces: minimal distance (object radius ', num2str(object.radius),')']);
     xlabel('Finger-Link pair');
     ylabel('Finger-Link pair');
-    set(gca, 'FontSize', 14);
+    set(gca, 'FontSize', 18);
 
     fprintf('[fitInOppsitionSpace] Total number of opposition spaces: %d\n', length(OS));
     saveas(gca, ['../database/results/os_heatmap_',num2str(object.radius),'.jpg'], 'jpeg');

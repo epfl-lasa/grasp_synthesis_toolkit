@@ -1,11 +1,13 @@
 % Obtain the symbolic form of nonlinear inequality constraints
-function [c, c_grad, param, ht_c, ht_c_grad] = cylNonLinIneqConst(hand, param)
+function [c, param] = cylNonLinIneqConst(hand, param)
+% [c, c_grad, param, ht_c, ht_c_grad] = cylNonLinIneqConst(hand, param)
     os_info = param.os.os_info;
     
     % parameters
     ncp = param.ncp;                % number of contact points (palm incl.)
     obj_r = param.obj.radius;       % object radius
     link_r = param.hand_radius;     % finger radius of the hand
+    this_object = param.obj;
    
     % symbolic variables
     X_key = param.X_key;
@@ -65,34 +67,7 @@ function [c, c_grad, param, ht_c, ht_c_grad] = cylNonLinIneqConst(hand, param)
                 continue;       % pass if the link is not real
             end
             
-            % remove constraint over spheres over a link
-            
-%             % compute number of points to approximate the link
-%             max_dist = 2*hand.hand_radius*cos(asin(gamma));
-%             nb_link_pt = min([nCylinderAxis,ceil(link.L/max_dist)]);
-%             % select at most nCylinderAxis points
-%             % nb_link_pt = ceil(link.L/(2*hand.hand_radius*sqrt(eta^2-1)));
-%             % TODO remove one of these lines
-%             link_pt_dist = 1/nb_link_pt; % distance between link points
-% 
-%             % compute uniform points in range [0, L] along the link
-%             link_pt_loc = link_pt_dist/2 + [0:nb_link_pt-1].*link_pt_dist;
-% 
-%             % compute a vector along the link
-%             link_pos_this = link.symbolic.HT_this(1:3,4);
-%             link_pos_next = link.symbolic.HT_next(1:3,4);
-%             delta_pos = link_pos_next - link_pos_this;
-%             for m=1:nb_link_pt % loop over the link
-%                 for  n=1:nb_axpt % loop over the cylinder object
-%                     % compute the point on the link
-%                     link_pt = link_pos_this + link_pt_loc(m)*delta_pos;
-%                     obj_pt = obj_axpt(:,n);
-%                     % define the constraint using squared norms
-%                     c_ij = (link_r + obj_r)^2 - dot(link_pt - obj_pt,link_pt - obj_pt);
-%                     %c_ij = link_r*eta + obj_r - norm(link_pos-obj_axpt(:,k),2);
-%                     c(end+1) = c_ij;
-%                 end
-%             end
+            % define a constraint for each link up to the contactig link
             for n=1:nb_axpt
                 obj_pt = obj_axpt(:,n);
                 dist = distToLink(link, obj_pt);
@@ -117,36 +92,20 @@ function [c, c_grad, param, ht_c, ht_c_grad] = cylNonLinIneqConst(hand, param)
     incl_fingers = min(f_actv)+1:max(f_actv)-1; % indices of in-between fingers
   
     if ~isempty(incl_fingers) % in-between finger exists
-        for f = 1:length(incl_fingers)
-            finger = hand.F{incl_fingers(f)}; % same as collision avoidance: father-links vs. object
+        for f = min(f_actv)+1:max(f_actv)-1
+            finger = hand.F{f}; % same as collision avoidance: father-links vs. object
             for i = 1:finger.n % loop over all links in the included finter
                 link = finger.Link{i};
                 if ~link.is_real % skip virtual links
                     continue;
                 end
-%                 link_pos_this = link.symbolic.HT_this(1:3,4);
-%                 link_pos_next = link.symbolic.HT_next(1:3,4);
-%                 max_dist = 2*hand.hand_radius*cos(asin(gamma));
-%                 nb_link_pt = min([nCylinderAxis,ceil(link.L/max_dist)]);
-%                 link_pt_dist = 1/nb_link_pt;
-%                 link_pt_loc = link_pt_dist/2 + [0:nb_link_pt-1].*link_pt_dist; % in [0,1]
-%                 delta_pos = link_pos_next - link_pos_this; % symbolic
-%                 for m=1:nb_link_pt      % loop over link points
-%                     for n=1:nb_axpt     % loop over object axis points
-%                         link_pt = link_pos_this + link_pt_loc(m)*delta_pos;
-%                         obj_pt = obj_axpt(:,n);
-%                         % use squared norm for the constraint
-%                         c_ij = (link_r + obj_r)^2 - dot(link_pt - obj_pt,link_pt - obj_pt);
-%                         %c_ij = (link_r + obj_r)^2 - (link_pt - obj_pt).' * (link_pt - obj_pt);
-%                         c(end+1) = c_ij;
-%                     end
-%                 end
-                  for n=1:nb_axpt
-                      obj_pt = obj_axpt(:,n);
-                      dist = distToLink(link, obj_pt);
-                      c_ij = link_r + obj_r - dist;
-                      c(end+1) = c_ij;
-                  end
+
+                for n=1:nb_axpt
+                  obj_pt = obj_axpt(:,n);
+                  dist = distToLink(link, obj_pt);
+                  c_ij = link_r + obj_r - dist;
+                  c(end+1) = c_ij;
+                end
             end
         end
     end
@@ -161,13 +120,6 @@ function [c, c_grad, param, ht_c, ht_c_grad] = cylNonLinIneqConst(hand, param)
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     fprintf('* [3/5] Collision avoidance (object vs. palm): ');
     
-    %x1 = hand.F{1}.symbolic.base(1:3,4);
-    %x2 = hand.F{end}.symbolic.base(1:3,4);
-    % Line x1-x2 is the 'finger base line' that connects all finger bases
-    % This detection is realized by calculating the distance between object
-    % center and the finger base line
-    %dist = norm(cross(obj_cnt-x1,obj_cnt-x2))/norm(x2-x1);
-
     nb_axpt = size(obj_axpt,2);
     for k=1:nb_axpt
         % palm_point is already on the surface. 
@@ -207,7 +159,6 @@ function [c, c_grad, param, ht_c, ht_c_grad] = cylNonLinIneqConst(hand, param)
                     fprintf('Palm collision contains inactive link. Link is skipped.\n');
                     continue;
                 end
-                
                 
                 % Check if current collision pair has already been detected previously
                 already_exist = false; % if the current pair of collision already exists in the collision pair
@@ -284,11 +235,7 @@ function [c, c_grad, param, ht_c, ht_c_grad] = cylNonLinIneqConst(hand, param)
 
                 for k = 1:numel(coll) % link k collides with current link
                     [k_f,k_l] = deal(coll{k}(1),coll{k}(2));
-                    
-                    if abs(k_f-idx_f)>1 % skip non-adjacent fingers
-                        continue;
-                    end
-                    
+                                       
                     already_exist = false; % if the current pair of collision already exists in the collision pair
                     if ~isempty(all_collision_pairs)
                         for p = 1:numel(all_collision_pairs)
@@ -367,51 +314,32 @@ function [c, c_grad, param, ht_c, ht_c_grad] = cylNonLinIneqConst(hand, param)
                 sph_oc = obj_i.ctr;
                 sph_radius = obj_i.radius;
                                 
-%                 % add a constraint for each of the n axis points
-%                 nb_axpt_this = size(obj_axpt,2); % obj_axpt is (3 x n_points)
-%                 for j = 1:nb_axpt
-%                     axis_point = obj_axpt(:,k);
-%                     dist = norm(sph_oc-axis_point);
-%                     c(end+1) = sph_radius + obj_r - dist;
-%                 end
+                % add a constraint for each of the n axis points
+                nb_axpt_this = size(obj_axpt,2); % obj_axpt is (3 x n_points)
+                for j = 1:nb_axpt
+                    axis_point = obj_axpt(:,j);
+                    dist = norm(sph_oc-axis_point);
+                    c(end+1) = sph_radius + obj_r - dist;
+                end
                 
-                  % TEST if this works with simplified constraint
-                dist = distToObj(object, sph_oc);
                 c(end+1) = sph_radius + obj_r - dist;
                 
             elseif strcmp(obj_i.type,'cyl')
                 
-                % TEST IF THIS WORKS WITH ONLY 2*N constraints
-%                 % THIS is a cylinder and OTHER is a cylinder
-%                 cyl_radius = obj_i.radius;
-%                 cyl_axpt = obj_i.axPtArray;
-%                 nb_axpt_other = size(cyl_axpt,2);
-%                 nb_axpt_this = size(obj_axpt,2); % obj_axpt is (3 x n_points)
-%                 for k=1:nb_axpt_other
-%                     for j=1:nb_axpt_this
-%                         axis_point_other = cyl_axpt(:,k);
-%                         axis_point_this = obj_axpt(:,j);
-%                         dist = norm(axis_point_this - axis_point_other);
-%                         c(end+1) = cyl_radius + obj_r - dist;
-%                     end
-%                 end
-                
-                % constraint sphere approx. of THIS wrt axis of other object 
-                % (other object with fixed axis)
+                % THIS is a cylinder and OTHER is a cylinder
                 cyl_radius = obj_i.radius;
                 cyl_axpt = obj_i.axPtArray;
                 nb_axpt_other = size(cyl_axpt,2);
+                nb_axpt_this = size(obj_axpt,2); % obj_axpt is (3 x n_points)
                 for k=1:nb_axpt_other
-                    axis_point_other = cyl_axpt(:,k);
-                    dist = distToObj(object, axis_point_other, 'symbolic');
-                    c(end+1) = cyl_radius + obj_r - dist;
+                    for j=1:nb_axpt_this
+                        axis_point_other = cyl_axpt(:,k);
+                        axis_point_this = obj_axpt(:,j);
+                        dist = norm(axis_point_this - axis_point_other);
+                        c(end+1) = cyl_radius + obj_r - dist;
+                    end
                 end
-                % constraint for this obj with 
-                for k=1:nb_axpt
-                    axis_point_this = obj_axpt(:,k);
-                    dist = distToObj(obj_i, axis_point_this, 'fixed');
-                    c(end+1) = cyl_radius + obj_r - dist;
-                end
+                
                 
             elseif strcmp(obj_i.type,'comp')
                 comp_radius = obj_i.radius;
@@ -455,17 +383,7 @@ function [c, c_grad, param, ht_c, ht_c_grad] = cylNonLinIneqConst(hand, param)
     param.c_name = c_name;
     
     matlabFunction(c,'File','../database/symbolic_functions/nonl_c','Vars',X_key,'Optimize',false);
-
-    %%% Calculate gradient Gradient follows the format. Notice that this is the TRANSPOSE of Jacobian!
-    % [dc1/dx1, dc2/dx1;...
-    %  dc1/dx2, dc2/dx2];
-    c_grad = transpose(jacobian(c, X_key));
     
-    matlabFunction(c_grad,'File','../database/symbolic_functions/nonl_c_grad','Vars',X_key,'Optimize',false);
     fprintf('  Total num. of nonl. inequality constraints: %d\n', numel(c));
     
-    if nargout > 3 % create function handles
-        ht_c = matlabFunction(c,'Vars',X_key);
-        ht_c_grad = matlabFunction(c_grad,'Vars',X_key);
-    end
 end

@@ -20,10 +20,7 @@ function visualizeOptimizationConfig(hand, object_list, X_sol, param, fig_title,
     
     %%%%%%%%%%
     figure, hold on;
-    xlabel('X');
-    ylabel('Y');
-    zlabel('Z');
-    view([-150 30]);
+
     
     if nargin>4
         title(fig_title);
@@ -47,13 +44,17 @@ function visualizeOptimizationConfig(hand, object_list, X_sol, param, fig_title,
                 plotObject(object);
                 hold on;
                 %scatter3(oc(1),oc(2),oc(3),100,'b','filled');
-                plot_contact_info = true;
+                %plot_contact_info = true;
             case 'cell' % multiple objects available
+                % three different colors for objects
+                all_colors = [[0.9290 0.6940 0.1250];...
+                              [0 0.4470 0.7410];...
+                              [0.4660 0.6740 0.1880];...
+                              [0.4940 0.1840 0.5560]];
+                              
                 for i = 1:numel(object_list)
                     obj_i = object_list{i};
-                    if ~isfield(obj_i,'clr')
-                        warning('Object color not specified.');
-                    end
+                    obj_i.clr = all_colors(i,:);
                     if (~isempty(obj_i)) && isa(obj_i,'struct')
                         plotObject(obj_i); 
                         hold on;
@@ -161,6 +162,15 @@ function visualizeOptimizationConfig(hand, object_list, X_sol, param, fig_title,
             quiver3(cp(1),cp(2),cp(3),cn(1),cn(2),cn(3));
         end
     end
+    
+    
+    ax = gca;
+    ax.FontSize = 20;
+    xlabel('X','Fontsize',18);
+    ylabel('Y','Fontsize',18);
+    zlabel('Z','Fontsize',18);
+    view([200, 200,100]);
+    
     
     if if_save
         savefig([fig_title,'.fig']);

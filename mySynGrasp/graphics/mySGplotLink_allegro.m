@@ -91,6 +91,7 @@ yst = xst;
 zst = xst;
 
 h = surf(xrot,yrot,zrot);
+h.DiffuseStrength = 0.5;
 colormap([0.25 0.25 0.25]);
 % freezeColors;
 alpha(h,transp)
@@ -105,6 +106,7 @@ for i = 1:21
     end
 end
 h = surf(xst,yst,zst);
+h.DiffuseStrength = 0.5;
 colormap(color);
 % freezeColors;
 alpha(h,transp);

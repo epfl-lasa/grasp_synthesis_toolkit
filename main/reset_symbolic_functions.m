@@ -19,6 +19,7 @@ if isfile('../database/symbolic_functions/nonl_ceq.m')
     delete ../database/symbolic_functions/nonl_ceq.m
     functions_exist = true;
 end
+
 if isfile('../database/symbolic_functions/nonl_ceq_grad.m')
     delete ../database/symbolic_functions/nonl_ceq_grad.m
     functions_exist = true;

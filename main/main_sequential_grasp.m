@@ -7,7 +7,6 @@ setup_problem_config;
 
 %% Configuration of experiment
 recon.hand_model = true; % reconstruct hand models
-recon.object_model = false; % reconstruct object models
 recon.rmap = true; % reconstruct reachability maps (keep true to resample after each grasp)
 recon.os = true;    % reconstruct opposition space (keep true to resample after each grasp)
 
@@ -30,10 +29,12 @@ else
 end
 %% Create Object Models
 
-generate_objects = false;
+generate_objects = true;
 if generate_objects
-    nb_obj_per_set = 10;
-    generate_object_set(nb_obj_per_set);
+    nb_obj_per_set = 2;
+    objects = generate_object_set(nb_obj_per_set);
+else
+    objects = load('objects.mat')
 end
 % define an object manually
 
@@ -64,12 +65,13 @@ end
 %         object = compObject(Param);
 %         plotCompObject(object,false);
 % end
-load('objects.mat')
 
 % squash ball: sphere with radius 20
 % tennis ball: sphere with radius 30 (works only with F1L4 and F2L4
 
-object_list = {sphereObject([0;0;-100],15), sph_10{2}};
+object_list = {objects.cyl_R15H40{1}, objects.comp{1}, objects.cyl_R15H40{1}, objects.cyl_R15H40{1}};
+% 1: {objects.sph15{1}, objects.cyl_R15H30{1}}
+% 3: {objects.cyl_R15H30{1}, objects.sph20{1}, objects.cyl_R15H40{1}}
 %% Optimization
 
 % List of Opposition Space pairs, used as candidates for grasping.
@@ -90,14 +92,14 @@ object_list = {sphereObject([0;0;-100],15), sph_10{2}};
 % comprises the ad-/abduction degrees of freedom on the bottom of the finger.
 % The last link is used to model another virtual link at finger tip for convenience.
 
-osList = {{[2,3],[3,3]},{[3,4],[2,4]}};%,...
-
-
+osList = {{[4,4],[0,0]}, {[4,3],[3,3]}, {[2,4],[3,4]}, {[1,4],[2,2]}};%,...
+% 1: {{[1,4],[2,3]},{[3,3],[4,3]}}
+% 3: {{[3,3],[4,3]},    {[2,3],[3,3]}, {[1,4],[2,2]}};
 grasped_objects = {};
 for i = 1:numel(osList)
     fprintf('Grasping object: %d\n', i);
     
-    os_pair = osList{i};
+    os_pair = osList{i}; % TODO pass a list of opposition spaces
     object = object_list{i};
     file_title = ['sequential_grasp_'...
         '_obj_',num2str(i),...
@@ -113,8 +115,8 @@ for i = 1:numel(osList)
     if if_solution
         grasped_objects{end+1} = object;
         visualizeOptimizationConfig(hand, grasped_objects, opt_soln.X_sol, opt_soln.param);
-        save(['../database/results/',file_title,'.mat']);
-        savefig(['../database/results/',file_title,'.fig']);
+        save(['../database/results_sequential/',file_title,'.mat']);
+        savefig(['../database/results_sequential/',file_title,'.fig']);
     else
         disp('No solution obtained. Exit.');
         break; % stop execution if one of the objects cannot be placed

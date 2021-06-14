@@ -6,8 +6,7 @@ setup_path;
 setup_problem_config;
 
 %% Configuration of experiment
-recon.hand_model = true; % reconstruct hand models [TODO] remove this after changes applied
-recon.object_model = true; % reconstruct object models
+recon.hand_model = true; % reconstruct hand models
 recon.rmap = true; % reconstruct reachability maps
 recon.os = true; % reconstruct opposition space
 
@@ -46,15 +45,15 @@ switch obj_type
         object_list = cat(2, sph_10, sph_10,sph_10, sph_20, sph_20,sph_20, sph_30);
         
     case 'cyl'
-        %param_R10H30.radius = 10;
-        %param_R10H30.height = 30;
-        %cyl_R10H30 = create_object_list(obj_type, param_R10H30, nb_objects);
+        param_R10H30.radius = 10;
+        param_R10H30.height = 30;
+        cyl_R10H30 = create_object_list(obj_type, param_R10H30, nb_objects);
         param_R15H50.radius = 15;
         param_R15H50.height = 50;
         cyl_R15H50 = create_object_list(obj_type, param_R15H50, nb_objects);
-        %object_list = cat(2, cyl_R10H30,cyl_R10H30,cyl_R10H30,...
-        %                     cyl_R15H50,cyl_R15H50,cyl_R15H50);
-        object_list = cat(2,cyl_R15H50,cyl_R15H50);
+        object_list = cat(2, cyl_R10H30,cyl_R10H30,cyl_R10H30,...
+                             cyl_R15H50,cyl_R15H50,cyl_R15H50);
+        %object_list = cat(2,cyl_R15H50,cyl_R15H50);
     case 'comp'
         param1.radius = 10;
         param1.height = 30;
@@ -62,10 +61,14 @@ switch obj_type
         param1.sphereRadius = [15,15];
         comp_1 = create_object_list(obj_type, param1, nb_objects);
         
-        object_list = cat(2,comp_1,comp_1);
-%         object = compObj(Param);
-%         mySGplotHand(hand);
-%         plotCompObject(object,false);
+        
+        param2.radius = 15;
+        param2.height = 70;
+        param2.sphereCenter = [-20,0,45;0,0,45;20,0,45];
+        param2.sphereRadius = [20,20,20];
+        comp_2 = create_object_list(obj_type, param2, nb_objects);
+        
+        object_list = cat(2,comp_1,comp_1,comp_1, comp_2, comp_2, comp_2);
 end
 
 
@@ -90,22 +93,23 @@ fprintf("[2] Object list of type %s constructed.\n", obj_type);
 % However, link '1' is usually modeled as a virtual link (length 0) that 
 % comprises the ad-/abduction degrees of freedom on the bottom of the finger.
 % The last link is used to model another virtual link at finger tip for convenience.
-switch (obj_type)
+switch obj_type
     case 'sph'
         os_list = {{[1,4],[2,3]},{[3,4],[4,4]},{[3,4],[0,0]},...  % radius 10
                    {[1,4],[2,3]},{[3,4],[4,4]},{[3,4],[0,0]},...  % radius 20
                    {[1,4],[2,4]}}; % radius 32: almost no other opposition space seems to work
     case 'cyl'
-        %os_list = {{[1,4],[2,3]},{[2,3],[3,3]},{[0,0],[2,4]},...  % radius 10 height 30
-        %           {[1,4],[2,3]},{[2,3],[3,3]},{[0,0],[2,4]}};    % radius 15 height 50
-        os_list = {{[2,3],[3,3]}};       
+        os_list = {{[1,4],[2,3]},{[2,3],[3,3]},{[0,0],[2,4]},...  % radius 10 height 30
+                   {[1,4],[2,3]},{[2,3],[3,3]},{[0,0],[2,4]}};    % radius 15 height 50
+        %os_list = {{[2,3],[3,3]}};       
     case 'comp'
-        os_list = {{[2,3],[3,3]}}  % object 1
-                   %{[1,4],[2,3]},{[2,4],[3,4]},{[2,3],[2,4]}}     % object 2
+        %os_list = {{[2,3],[3,3]}}  % object 1
+        os_list =  {{[1,4],[2,3]},{[2,4],[3,4]},{[3,3],[4,3]},...
+                    {[1,4],[2,3]},{[2,4],[3,4]},{[3,4],[4,4]}};     % object 2
 end
 % successful simulations achieved for:
 % {[0,0],[2,4]} % radius: 10, height: 30
-% {[0,0],[3,4]} % radius: 18, height: 30
+% {[0,0],[3,4]} % radius: 18, height: 17
 % {[2,4],[3,4]} % radius: 14, height: 30
 % {[2,3],[3,3]} % radius: 14, height: 30
 % {[2,2],[3,2]} % radius: 14, height: 30
@@ -123,14 +127,6 @@ end
 for i = 1:numel(os_list) % loop over os_pair
     os_pair = os_list{i};       % select the os_pair
     nb_errors = 0;
-    
-    %% Configuration of experiment
-    recon.hand_model = true; % reconstruct hand models [TODO] remove this after changes applied
-    recon.object_model = true; % reconstruct object models
-    recon.rmap = true; % reconstruct reachability maps
-    recon.os = true; % reconstruct opposition space
-    
-    
     
     for j=1:nb_objects
         experiment_cnt = (i-1)*nb_objects + j;
@@ -158,8 +154,8 @@ for i = 1:numel(os_list) % loop over os_pair
             visualizeOptimizationConfig(hand, object, opt_soln.X_sol, opt_soln.param);
             save(['../database/results/',file_title,'.mat']);
             savefig(['../database/results/',file_title,'.fig']);
-            eq_const = sum(opt_soln.param.c_idx);
-            ineq_const = sum(opt_soln.param.ceq_idx);
+            nb_ineq_const = sum(opt_soln.param.c_idx);
+            nb_eq_const = sum(opt_soln.param.ceq_idx);
             constraint_time = opt_soln.time_constraints;
             optimizer_time = opt_soln.time_optimizer;
             success = 1;
@@ -167,8 +163,8 @@ for i = 1:numel(os_list) % loop over os_pair
             disp('No solution obtained. Exit.');
             nb_errors = nb_errors + 1;
             opt_cost = -1;
-            eq_const = -1;
-            ineq_const = -1;
+            nb_eq_const = -1;
+            nb_ineq_const = -1;
             constraint_time = -1;
             optimizer_time = -1;
             success = 0;
@@ -176,20 +172,15 @@ for i = 1:numel(os_list) % loop over os_pair
         
         % write results to logfile
         if strcmp(object.type, 'sph')
-            fprintf(logfile, '%s,F%dL%d,F%dL%d,%5.1f,%d,%8.2f,%d,%d,%5.0f,%5.0f\n',object.type, os_pair{1}(1),...
+            fprintf(logfile, '%s,F%dL%d,F%dL%d,%5.1f,%d,%8.2f,%d,%d,%6.1f,%6.1f\n',object.type, os_pair{1}(1),...
                     os_pair{1}(2),os_pair{2}(1),os_pair{2}(2), object.radius, success,...
-                    opt_cost, eq_const, ineq_const, constraint_time, optimizer_time);
+                    opt_cost, nb_eq_const, nb_ineq_const, constraint_time, optimizer_time);
         else
-            fprintf(logfile, '%s,F%dL%d,F%dL%d,%5.1f,%5.1f,%d,%8.2f,%d,%d,%5.0f,%5.0f\n',object.type, ...
+            fprintf(logfile, '%s,F%dL%d,F%dL%d,%5.1f,%5.1f,%d,%8.2f,%d,%d,%6.1f,%6.1f\n',object.type, ...
                 os_pair{1}(1),os_pair{1}(2),os_pair{2}(1),os_pair{2}(2),...
-                object.radius, object.height, success, opt_cost, eq_const,ineq_const,constraint_time, optimizer_time);
+                object.radius, object.height, success, opt_cost, nb_eq_const,nb_ineq_const,constraint_time, optimizer_time);
         end
         
-        %% Configuration of experiment
-        recon.hand_model = false; % reconstruct hand models
-        recon.object_model = false; % reconstruct object models
-        recon.rmap = false; % reconstruct reachability maps
-        recon.os = false; % reconstruct opposition space
     end
     
     

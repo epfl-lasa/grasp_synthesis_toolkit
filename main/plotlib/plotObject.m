@@ -45,69 +45,72 @@
 %  SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
-function plotObject(object,radius,nps)
+function plotObject(object,no_light)
 
+if nargin < 2
+    no_lights = false;
+end
 if nargin < 1 || nargin > 3
     error 'wrong number of arguments'
 end
 
 switch object.type
-    case 'auto'
-        if(~mySGisObject(object))
-            error 'object argument is not a valid object-structure' 
-        end
-        if nargin == 1
-            % default settings
-            if isfield(object,'radius')
-                radius = object.radius;
-            else
-                radius = 5;
-            end
-            nps = 5;
-        elseif nargin == 2
-            nps = 5;
-        end
-        
-        cp = object.cp(1:3,:)';
-        
-        co = mean(cp); % object center
-        
-        % number of contact points
-        [ncp,~] = size(cp);
-        
-        % contact normal unitary vectors
-        ncp = zeros(ncp,3);
-        for i = 1:ncp
-            ncp(i,:) = (co - cp(i,:))/norm(co - cp(i,:));
-        end
-        
-        X = cp;
-        
-        for i = 1:ncp
-            [filletx,fillety,filletz] = sphere(nps);
-            spherecenter = cp(i,:) + radius*ncp(i,:);
-            for j = 1:nps+1
-                for k = 1:nps+1
-                    fillett = radius*[filletx(j,k) fillety(j,k) filletz(j,k)]+ spherecenter;
-                    X = [X;fillett];
-                end
-            end
-        end
-        
-        k = convhulln(X);
-        h = trisurf(k,X(:,1),X(:,2),X(:,3));
-        aquamarine = [127/255 1 212/255];
-        set(h, 'EdgeColor', aquamarine*.8, 'FaceColor', aquamarine);
-        hold on
-        plot3(cp(:,1),cp(:,2), cp(:,3),'ro','Markersize', 5);
+%     case 'auto'
+%         if(~mySGisObject(object))
+%             error 'object argument is not a valid object-structure' 
+%         end
+%         if nargin == 1
+%             % default settings
+%             if isfield(object,'radius')
+%                 radius = object.radius;
+%             else
+%                 radius = 5;
+%             end
+%             nps = 5;
+%         elseif nargin == 2
+%             nps = 5;
+%         end
+%         
+%         cp = object.cp(1:3,:)';
+%         
+%         co = mean(cp); % object center
+%         
+%         % number of contact points
+%         [ncp,~] = size(cp);
+%         
+%         % contact normal unitary vectors
+%         ncp = zeros(ncp,3);
+%         for i = 1:ncp
+%             ncp(i,:) = (co - cp(i,:))/norm(co - cp(i,:));
+%         end
+%         
+%         X = cp;
+%         
+%         for i = 1:ncp
+%             [filletx,fillety,filletz] = sphere(nps);
+%             spherecenter = cp(i,:) + radius*ncp(i,:);
+%             for j = 1:nps+1
+%                 for k = 1:nps+1
+%                     fillett = radius*[filletx(j,k) fillety(j,k) filletz(j,k)]+ spherecenter;
+%                     X = [X;fillett];
+%                 end
+%             end
+%         end
+%         
+%         k = convhulln(X);
+%         h = trisurf(k,X(:,1),X(:,2),X(:,3));
+%         aquamarine = [127/255 1 212/255];
+%         set(h, 'EdgeColor', aquamarine*.8, 'FaceColor', aquamarine);
+%         hold on
+%         plot3(cp(:,1),cp(:,2), cp(:,3),'ro','Markersize', 5);
     
     case 'cube'
         hold on
         mySGplotCube(object);
     case 'cyl'
-        plotCylinder(object,false);
+        plotCylinder(object,false,no_lights);
     case 'sph'
-        mySGplotSphere(object);
+        plotSphere(object, no_lights);
     case 'comp'
         plotCompObject(object,false);
 end

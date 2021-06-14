@@ -16,46 +16,69 @@ function [hand, object, opt_soln, opt_cost, if_solution] = graspSingleObject(han
     %hand = activateLinkContact(hand);
 
     %% Step 1: Construct/load reachability map
-    if recon.rmap || ~isfield(hand, 'reachability_map')
-        disp('Constructing hand reachability map...');
-        [rmap, hand] = reachabilityMap(hand, 'all', false);
-        fprintf('\n[3] Hand reachability map constructed.\n');
-        %save('../database/models.mat','hand');
-        disp('Hand model updated: link reachability map');
-    else
-        rmap = load('reachable_map.mat');
-        rmap = rmap.map_hand;
-        fprintf('\n[3] Hand reachability map loaded.\n');
+
+    disp('[1] Constructing hand reachability map...');
+
+    active_fingers = zeros(1,4);
+    if os_pair{1}(1) && hand.factv(os_pair{1}(1))
+        active_fingers(os_pair{1}(1)) = 1;
     end
-    if true
-        plotReachabilityMap(hand, rmap);
+    if os_pair{2}(1) && hand.factv(os_pair{2}(1))
+        active_fingers(os_pair{2}(1)) = 1;
     end
+    [rmap, hand] = rMapActiveLinks(hand, active_fingers);
+    disp('Updated link reachability map in hand model');
     
-    %% Step 2: Construct collision map
-    if recon.os || ~isfield(hand,'collision_map')
-        disp('Constructing collision map...');
-        hand = collisionOSSearch(hand, rmap, if_plot); % collision opposition space
-        %save('../database/models.mat','hand');
-        disp('Hand model updated: link reachability map');
+    if if_plot
+        plotRmapPerFinger(hand, rmap);
     end
+
+% DEPRECATED
+
+%     %% Step 2: Construct collision map
+%     if recon.os || ~isfield(hand,'collision_map')
+%         disp('Constructing collision map...');
+%         hand = collisionOSSearch(hand, rmap, if_plot); % collision opposition space
+%         %save('../database/models.mat','hand');
+%         disp('Hand model updated: link reachability map');
+%     end
 
     %% Step 3: Filter potential feasible opposition spaces for grasping
     if recon.os || ~isfile(['../database/opposition_space_',num2str(object.radius),'.mat'])
-        disp('Searching for potential opposition space...');
+        disp('[2] Searching for potential opposition space...');
         OS = fitInOppsitionSpace(hand, object, rmap, if_plot);
         %[OS, existence_heatmap] = fitInOppsitionSpace(hand, object, rmap, if_plot);
-        fprintf('\n[4] Opposition space constructed.\n');
+        fprintf('\n Opposition space constructed.\n');
     else
         os_data = load(['opposition_space_',num2str(object.radius),'.mat']);
         OS = os_data.OS;
-        fprintf('\n[4] Opposition space loaded.\n');
+        fprintf('\n[2] Opposition space loaded.\n');
     end
 
-    osCandList = selectSingleOS(OS,os_pair); % pre-assigned OS in the function as default and for test
+    osCandList = selectSingleOS(OS,os_pair, object); % pre-assigned OS in the function as default and for test
     
     if isempty(osCandList)
-        warning('No OS candidate found')
+        warning('Opposition space is not feasible')
     end
+    
+   %% Step 4: collision list
+%    if recon.os || isfield(hand, 'collision_map')
+%         disp('constructing reduced reachability map for collision search');
+%         active_fingers = zeros(1,4);
+%         if os_pair{1}(1) && hand.factv(os_pair{1}(1))
+%             active_fingers(os_pair{1}(1)) = 1;
+%         end
+%         if os_pair{2}(1) && hand.factv(os_pair{2}(1))
+%             active_fingers(os_pair{2}(1)) = 1;
+%         end
+%         [rmap_coll, hand] = rMapActiveLinks(hand, active_fingers);
+     fprintf("\n[3] Searching for possible interlink collisions\n");
+     do_plot = false;
+     hand = collisionOSSearch(hand, rmap, do_plot);
+     fprintf("Updated collision lists\n")
+%    end
+
+    %% Launch the optimization
     
     solnSet = {}; % to save results for planned grasp in each oppospc
     costList = []; % to save cost

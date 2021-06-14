@@ -50,19 +50,22 @@ function struct = sphereObject(transl,rad,clr,res)
     if nargin < 4
         res = 20;
     end
-    if nargin < 3
-        % clr = 'none'; % default color of sphere
-        clr = [127/255 1 212/255]; % aquamarine
-    end
-    if nargin < 2
-        rad = 25;
+%     if nargin < 3
+%         % clr = 'none'; % default color of sphere
+%         clr = [127/255 1 212/255]; % aquamarine
+%     end
+%     if nargin < 2
+%         rad = 25;
+%     end
+    if nargin >=3
+        struct.clr = clr;
     end
     Htr = eye(4);
     Htr(1:3,4) = transl;
     
     struct.type = 'sph';
     struct.res = res;
-    struct.clr = clr;
+   
     struct.ctr = transl;
     struct.radius = rad;
     [X,Y,Z] = sphere(res); % creates a unit sphere mesh

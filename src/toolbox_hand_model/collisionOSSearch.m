@@ -19,7 +19,7 @@ end
 hand_radius = hand.hand_radius;
 fprintf('* Construct collision map for hand radius: %d\n', hand_radius);
 
-d = hand_radius * 2; % collision distance is twice the link cylinder radius
+%d = hand_radius * 2; % collision distance is twice the link cylinder radius
 nf = numel(rmap); % 5, number of fingers (incl. palm)
 
 link_dict = {}; % save each one of the (1) link rmap, (2) link info, (3) link name, in a list
@@ -29,7 +29,7 @@ category_list = {}; % save the string of category name for plotting
 for f = 1:nf % iterate over fingers
     temp_rmap = rmap{f}; % rmap of the current finger
 
-    if isa(temp_rmap,'struct') % this is palm, corresponds to f==6
+    if isa(temp_rmap,'struct') % this is palm, corresponds to f==5
         link_dict{end+1} = struct('rmap', temp_rmap.linkmesh,... % (N,3)
             'info', [0,0]);
         category_list{end+1} = 'P';
@@ -93,6 +93,7 @@ for i = 1:N % this link, link_i
             % Extract data points on the boundary surface of the rmaps to
             % accelerate computation
             if ispalm(jF) % Simplify link mesh only if the link is not palm
+                d = hand_radius;                
             else
                 k_j = boundary(rmap_j,1.0); % (N,3), 0: convex hull; default shrink factor S=0.5
                 if ~isempty(k_j)
@@ -101,12 +102,14 @@ for i = 1:N % this link, link_i
                     rmap_j = unique(rmap_j,'rows');
                     clear k_j;
                 end
+                % Notice that consecutive links cannot be skipped. Could overlap in
+                % grasping planning.
+                dist = pdist2(rmap_i, rmap_j, 'euclidean');
+                d = 2*hand.hand_radius;
+                min_dist = min(dist(:));
             end
 
-            % Notice that consecutive links cannot be skipped. Could overlap in
-            % grasping planning.
-            dist = pdist2(rmap_i, rmap_j, 'euclidean');
-            min_dist = min(dist(:));
+
             
             if min_dist < d % minimum distance between rmaps is smaller than 2*link radius, potential collision exists
                 if i<=j

@@ -60,7 +60,7 @@ p_transl_t = Htr*p.'; % size (4, 2*res)  -> transposed
 p = p_transl_t(1:3,:).'; % translated and rotated points
 
 % equidistant points along the axis (symbolic expression)
-dmin = rad*cos(asin(0.5));
+dmin = 2*rad*cos(asin(0.5));
 nPoints = ceil(h/dmin);                       % expression for n pts along axis
 pointDist = h/nPoints;
 distArray = pointDist/2 + [0:nPoints-1]*pointDist - h/2;

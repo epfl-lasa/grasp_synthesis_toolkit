@@ -10,13 +10,13 @@ function [c, c_grad, param, ht_c, ht_c_grad] = compNonLinIneqConst(hand, param)
     % symbolic variables
     X_key = param.X_key;
     obj_axpt = param.obj.sym.axisPtArray;   % equidistant points along axis
-    obj_cnt = param.obj.sym.ctr;            % object center
+    %obj_cnt = param.obj.sym.ctr;            % object center
 
     dict_q = param.dict_q; % dictionary of ALL symbolic joint angles: q11,q12,...
     nCylinderAxis = 5;
     nb_axpt = size(obj_axpt,2);
     nb_spheres = length(obj.sphereRadius);
-    gamma = 0.5;
+    %gamma = 0.5;
     
     palm_point = mean(hand.P.points_inr,1).';
     palm_normal = hand.P.contact.symbolic.n(:);
@@ -29,7 +29,6 @@ function [c, c_grad, param, ht_c, ht_c_grad] = compNonLinIneqConst(hand, param)
     % if the palm is in contact, remove the included fingers
     f_actv = f_actv(f_actv ~= 0);
     f_actv = min(f_actv):max(f_actv); % 
-    
     
     fprintf('\nConstructing Nonl. Inequality Constraints: \n');
     c = sym([]); % to save the symbolic form
@@ -63,9 +62,7 @@ function [c, c_grad, param, ht_c, ht_c_grad] = compNonLinIneqConst(hand, param)
             if ~link.is_real
                 continue;
             end
-           
-
-            
+  
             % collision constraint for cylindrical part
             for n=1:nb_axpt
                 obj_pt = obj_axpt(:,n);
@@ -74,7 +71,6 @@ function [c, c_grad, param, ht_c, ht_c_grad] = compNonLinIneqConst(hand, param)
                 c(end+1) = c_ij;
             end
             % collision constraint with spheres parts
-
             for n=1:nb_spheres
                 sph_ctr = obj.sym.sphereCenter(:,n);
                 sph_radius = obj.sphereRadius(n);
@@ -82,39 +78,7 @@ function [c, c_grad, param, ht_c, ht_c_grad] = compNonLinIneqConst(hand, param)
                 c_ij = (link_r + sph_radius) - dist;
                 c(end+1) = c_ij;
             end
-            
-            % old implementation
-%             max_dist = 2*hand.hand_radius*cos(asin(gamma));
-%             nb_link_pt = min([nCylinderAxis, ceil(link.L/max_dist)]);
-%             link_pt_dist = 1/nb_link_pt;
-%             link_pt_loc = link_pt_dist/2 + [0:nb_link_pt-1].*link_pt_dist;
-%             link_pos_this = link.symbolic.HT_this(1:3,4);
-%             link_pos_next = link.symbolic.HT_next(1:3,4);
-%             delta_pos = link_pos_next - link_pos_this;
-%             for m=1:nb_link_pt
-%                 for n=1:nb_axpt
-%                     link_pt = link_pos_this + link_pt_loc(m)*delta_pos;
-%                     obj_pt = obj_axpt(:,n);
-%                     % squared distance for constraint
-%                     c_ij = (link_r + obj_r)^2 - dot((link_pt-obj_pt),(link_pt - obj_pt));
-%                     
-%                     c(end+1) = c_ij;
-%                 end
-% %             end
-%             % collsion with other spheres
-%             nSpheres = length(obj.sphereRadius);
-%             for m=1:nb_link_pt
-%                 for n=1:nSpheres
-%                     link_pt = link_pos_this + link_pt_loc(m)*delta_pos;
-%                     sph_ctr = obj.sym.sphereCenter(:,n);
-%                     % take the true link radius here
-%                     c_ij = (link_r + obj.sphereRadius(n))^2 - dot((link_pt-sph_ctr),(link_pt-sph_ctr));
-%                     
-%                     c(end+1) = c_ij;
-%                 end
-%             end
         end
-        
     end
 
     c_idx(end+1) = numel(c);
@@ -131,7 +95,7 @@ function [c, c_grad, param, ht_c, ht_c_grad] = compNonLinIneqConst(hand, param)
   
     if ~isempty(incl_fingers) % in-between finger exists
         for f = min(f_actv)+1:max(f_actv)-1
-            finger = hand.F{incl_fingers(f)}; % same as collision avoidance: father-links vs. object
+            finger = hand.F{f}; % same as collision avoidance: father-links vs. object
             for i = 1:finger.n
                 link = finger.Link{i};
                 if ~link.is_real
@@ -153,38 +117,6 @@ function [c, c_grad, param, ht_c, ht_c_grad] = compNonLinIneqConst(hand, param)
                     c(end+1) = c_ij;
                 end
                
-                % old implementation
-%                 link_pos_this = link.symbolic.HT_this(1:3,4);
-%                 link_pos_next = link.symbolic.HT_next(1:3,4);
-% 
-%                 max_dist = 2*hand.hand_radius*cos(asin(gamma));
-%                 
-%                 nb_link_pt = min([nCylinderAxis, ceil(link.L/max_dist)]);
-%                 link_pt_dist = 1/nb_link_pt;
-%                 link_pt_loc = link_pt_dist/2 + [0:nb_link_pt-1].*link_pt_dist; % in [0,1]
-%                 delta_pos = link_pos_next - link_pos_this; % symbolic
-%                 for m=1:nb_link_pt
-%                     for n=1:nb_axpt
-%                         link_pt = link_pos_this + link_pt_loc(m)*delta_pos;
-%                         obj_pt = obj_axpt(:,n);
-% 
-%                         c_ij = (link_r + obj_r)^2 - dot((link_pt-obj_pt),(link_pt-obj_pt));
-% 
-%                         c(end+1) = c_ij;
-%                     end
-%                 end
-%                 % collsion with other spheres
-%                 nSpheres = length(obj.sphereRadius);
-%                 for m=1:nb_link_pt
-%                     for n=1:nSpheres
-%                         link_pt = link_pos_this + link_pt_loc(m)*delta_pos;
-%                         sph_ctr = obj.sym.sphereCenter(:,n);
-%                         % take the true link radius here
-%                         c_ij = (link_r + obj.sphereRadius(n))^2 - dot((link_pt-sph_ctr),(link_pt - sph_ctr));
-%                         
-%                         c(end+1) = c_ij;
-%                     end
-%                 end
             end
         end
     end
@@ -430,7 +362,7 @@ function [c, c_grad, param, ht_c, ht_c_grad] = compNonLinIneqConst(hand, param)
                     for j=1:length(obj.sphereRadius)
                         this_sph_rad = obj.sphereRadius(j);
                         this_sph_ctr = obj.sphereCenter(j);
-                        dist = norm(this_sph_ctr - axis_point(:,k));
+                        dist = norm(this_sph_ctr - cyl_axpt(:,k));
                         c(end+1) = this_sph_rad + cyl_radius - dist;
                     end
                 end

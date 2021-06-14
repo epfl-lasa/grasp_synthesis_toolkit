@@ -4,5 +4,6 @@
 *.fig
 *.csv
 *.txt
+*.mat
 
 database/

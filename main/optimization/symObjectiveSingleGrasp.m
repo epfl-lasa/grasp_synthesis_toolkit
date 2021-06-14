@@ -1,4 +1,5 @@
-function [obj, obj_grad, ht_obj, ht_obj_grad] = symObjectiveSingleGrasp(hand, param)
+function [obj] = symObjectiveSingleGrasp(hand, param)
+%[obj, obj_grad, ht_obj, ht_obj_grad] = symObjectiveSingleGrasp(hand, param)
 % Reference: Predicting precision grip grasp locations on three-dimensional objects, Lina K. Klein et al. 2020
 
     fprintf('\nConstructing Objective Function for single grasp: \n');
@@ -7,6 +8,7 @@ function [obj, obj_grad, ht_obj, ht_obj_grad] = symObjectiveSingleGrasp(hand, pa
     
     X_key = param.X_key;
     ncp = param.ncp;
+    object = param.obj;
     
     if ncp > 2
         error('NotImplementedError: objective function only work for 2-contact case.');
@@ -36,29 +38,40 @@ function [obj, obj_grad, ht_obj, ht_obj_grad] = symObjectiveSingleGrasp(hand, pa
     end
 
     %%% Cost 1: Force closure cost
-    obj_cntr = [sym('x'),sym('y'),sym('z')]; % (1,3)
+
     cpt = Cp(1,:); % (1,3) contact point thumb
-    ft = obj_cntr - cpt; % (1,3) surface normal at contact point. t: thumb, f direction, pointing towards object center
     cpi = Cp(2,:); % (1,3) contact point index
-    fi = obj_cntr - cpi; % i: index finger
+
+    % define inward facing normals
+    if strcmp(object.type, 'sph')
+        obj_cntr = [sym('x'),sym('y'),sym('z')]; % (1,3)
+        % define inward facing normals
+        ft = obj_cntr - cpt;
+        fi = obj_cntr - cpi; % i: index finger
+    else
+        ft = object.sym.cpProj(:,1).' - cpt;
+        fi = object.sym.cpProj(:,2).' - cpi;
+    end
     
     Cfc = atan2(norm(cross(ft,(cpi-cpt))), dot(ft,(cpi-cpt)))+...
         atan2(norm(cross(fi,(cpt-cpi))), dot(fi,(cpt-cpi))); % 'Cost force closure'
     
     %%% Cost 2: Torque cost
     fg = sym([0,0,-1]); % (1,3) (direction of) force of gravity
-    Ct = norm(cross((obj_cntr-cpi),-fg) + cross((obj_cntr-cpt),-fg));
+    if strcmp(object.type, 'comp')
+        obj_cntr = object.sym.com.';
+    else
+        obj_cntr = [sym('x'),sym('y'),sym('z')]; % (1,3)
+    end
+    
+    Ct = norm(cross(obj_cntr - cpt,-fg) + cross(obj_cntr - cpi,-fg));
 
     %%% minimize joint angle movement
     Q = X_key(param.idx_q);
     W = eye(numel(Q)); % cost weight matrix
     Cq = (Q(:).')*W*Q(:); % sum of square
 
-%     %%% centter the contact points
-%     Mu = X_key(param.idx_mu);
-%     W_mu = 10*eye(numel(Mu));
-%     Cmu = (Mu(:).'*W_mu*Mu(:));
-%     
+
     %%% objective function
     eta = 0.5; % balance coefficient
     obj = eta*(Cfc + Ct) + (1-eta)*Cq;
@@ -67,13 +80,13 @@ function [obj, obj_grad, ht_obj, ht_obj_grad] = symObjectiveSingleGrasp(hand, pa
     matlabFunction(obj,'File','../database/symbolic_functions/objfun','Vars',X_key,'Optimize',false);
     
     %%% Calculate gradient and save
-    obj_grad = transpose(jacobian(obj,X_key));
-    matlabFunction(obj_grad,'File','../database/symbolic_functions/objfun_grad','Vars',X_key,'Optimize',false);
-    
+%     obj_grad = transpose(jacobian(obj,X_key));
+%     matlabFunction(obj_grad,'File','../database/symbolic_functions/objfun_grad','Vars',X_key,'Optimize',false);
+%     
     disp('  Completed.');
 
-    if nargout > 2
-        ht_obj = matlabFunction(obj,'Vars',X_key);
-        ht_obj_grad = matlabFunction(obj_grad,'Vars',X_key);
-    end
+%     if nargout > 2
+%         ht_obj = matlabFunction(obj,'Vars',X_key);
+%         ht_obj_grad = matlabFunction(obj_grad,'Vars',X_key);
+%     end
 end

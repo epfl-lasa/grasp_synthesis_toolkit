@@ -95,10 +95,11 @@ ub_z = max(zrange(2,:));
 objctr_0 = [(lb_x+ub_x)/2;...
     (lb_y+ub_y)/2;...
     (lb_z+ub_z)/2];
+%objctr_0 = object.ctr;
 
 if ~strcmp(object.type, 'sph')
     obj_quat_0 = [0;0;0;1]; % added 3 rotation parameters
-    
+    %obj_quat_0 = compact(object.quat).';
     % contact points on cylinder
     mu_0 = zeros(ncp,1); % 0 corresponds to center of the cylinder axis
 end
@@ -265,8 +266,8 @@ lb(idx_phi) = -pi; % + deg2rad(1); % avoid overlap
 ub(idx_phi) = pi;
 
 %%% boundary of alp % 3 in total
-lb(idx_alp) = 0;
-ub(idx_alp) = 1;
+lb(idx_alp) = 0.1;
+ub(idx_alp) = 0.8;
 
 %%% boundary of palm
 lb(idx_pvec) = pvec_lb;
@@ -342,11 +343,11 @@ end
 tic
 switch object.type
     case 'sph'
-        [~,~,param] = sphNonLinIneqConst(hand, param);
-        [~,~,param] = sphNonLinEqConst(hand, param);
+        [~,param] = sphNonLinIneqConst(hand, param);
+        [~,param] = sphNonLinEqConst(hand, param);
     case 'cyl'
-        [~,~,param] = cylNonLinIneqConst(hand, param);
-        [~,~,param] = cylNonLinEqConst(hand, param);
+        [~,param] = cylNonLinIneqConst(hand, param);
+        [~,param] = cylNonLinEqConst(hand, param);
     case 'comp'
         [~,~,param] = compNonLinEqConst(hand, param);
         [~,~,param] = compNonLinIneqConst(hand, param);
@@ -361,14 +362,13 @@ param.time_constraint = time_constraint;
 %% Problem Configuration
 options = optimoptions('fmincon',...
     'Algorithm','sqp',...% 'active-set', 'interior-point', 'sqp', 'trust-region-reflective', or 'sqp-legacy'
-    'SpecifyObjectiveGradient',true,... % No gradient for objective function available
-    'SpecifyConstraintGradient',true,...
     'Display','final',...% 'off', 'none', 'notify', 'notify-detailed', 'final', 'final-detailed', 'iter', or 'iter-detailed'
     'FunctionTolerance',tol_fun,...
     'MaxFunctionEvaluations',max_fun_evals,...
     'MaxIterations',max_iter,...
     'StepTolerance',tol_x);
-
+%     'SpecifyObjectiveGradient',true,... % No gradient for objective function available
+%     'SpecifyConstraintGradient',true,...
 disp('Starting fmincon...');
 
 tic;

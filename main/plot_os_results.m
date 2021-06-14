@@ -19,7 +19,7 @@ for k=1:numel(os_list)
         if finger1 == 1
             i = link1-1;
         else
-            i = 3*(finger1-1) + link1;
+            i = 3*(finger1-1) + link1 - 1;
         end
     end
     
@@ -29,16 +29,16 @@ for k=1:numel(os_list)
         if finger2 == 1
             j = link2-1;
         else
-            j = 3*(finger2-1) + link2;
+            j = 3*(finger2-1) + link2 - 1;
         end
     end
-    fprintf("%d \t  %d\n", i, j);
+    fprintf("F%dL%d \t %d \t\t  F%dL%d \t %d\n", finger1, link1, i, finger2, link2, j);
     
     success = 0;
     for n=1:numel(successful_os)
         tmp_os1 = successful_os{n}{1};
         tmp_os2 = successful_os{n}{2};
-        tmp_F1 = tmp_os1(1)
+        tmp_F1 = tmp_os1(1);
         tmp_L1 = tmp_os1(2);
         
         tmp_F2 = tmp_os2(1);
@@ -65,6 +65,7 @@ heatmap(success_map,...
     'Colormap',col_bar,...
     'ColorLimits',[0 1],...
     'CellLabelColor','none');
+colorbar off;
 title(['Successful grasps (object radius ', num2str(15),')']);
 xlabel('Finger-Link pair');
 ylabel('Finger-Link pair');

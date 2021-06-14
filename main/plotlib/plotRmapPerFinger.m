@@ -38,7 +38,8 @@ for f = 1:nf
             finger = 0;
             palmmesh = map_finger.linkmesh;
             scatter3(palmmesh(:,1),palmmesh(:,2),palmmesh(:,3),'MarkerFaceColor','g', 'MarkerEdgeColor', 'g');
-            title('Reachability map palm')
+            title('Reachability map palm','Fontsize',20);
+            set(gca,'FontSize',20)
             hold on;
         else
             warning('Incorrect data type.');
@@ -62,7 +63,8 @@ for f = 1:nf
             shp = alphaShape(px,py,pz,30);
             plot(shp,'Facecolor',cmap(l,:),'EdgeColor',cmap(l,:),'EdgeAlpha',0.15,'FaceAlpha',0.25);
             titlename = ['Reachable map finger ',num2str(finger)];
-            title(titlename);
+            title(titlename,'Fontsize',20);
+            set(gca,'FontSize',20)
             hold on;
         end
     end
@@ -72,10 +74,10 @@ for f = 1:nf
 
     grid on;
     axis equal;
-    view([-150 30]);
+    view([150,150,50])
     
     saveas(gcf, file_name);
-    saveas(gcf, file_name_eps);
+    saveas(gcf, file_name_eps, 'epsc');
 end
 
 end

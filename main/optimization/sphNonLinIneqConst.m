@@ -1,6 +1,6 @@
 % Obtain the symbolic form of nonlinear inequality constraints
-function [c, c_grad, param, ht_c, ht_c_grad] = sphNonLinIneqConst(hand, param)
-
+function [c, param] = sphNonLinIneqConst(hand, param)
+% function [c, c_grad, param, ht_c, ht_c_grad] = sphNonLinIneqConst(hand, param)
     os_info = param.os.os_info;
     
     obj_r = param.obj.radius; % object radius
@@ -214,9 +214,9 @@ function [c, c_grad, param, ht_c, ht_c_grad] = sphNonLinIneqConst(hand, param)
                 for k = 1:numel(coll) % link k collides with current link
                     [k_f,k_l] = deal(coll{k}(1),coll{k}(2));
 
-                    if abs(k_f-idx_f)>1 % skip non-adjacent fingers
-                        continue;
-                    end
+%                     if abs(k_f-idx_f)>1 % skip non-adjacent fingers
+%                         continue;
+%                     end
                     
                     already_exist = false; % if the current pair of collision already exists in the collision pair
                     if ~isempty(all_collision_pairs)
@@ -280,91 +280,7 @@ function [c, c_grad, param, ht_c, ht_c_grad] = sphNonLinIneqConst(hand, param)
     c_idx(end+1) = numel(c)-sum(c_idx);
     c_name{end+1} = 'Collision avoidance (this link vs. other links)';
     fprintf('%d\n', c_idx(end));
-%     all_collision_pairs = {};
-%     for i = 1:ncp
-%         if ~all(os_info{i})
-%             continue; % palm does not move, will not collide with other fingers
-%         else
-%             [idx_f,idx_l] = deal(os_info{i}(1),os_info{i}(2)); % index of finger and link in the finger
-%             finger = hand.F{idx_f};
-%             nq_pre = min([idx_l, finger.nlink-1]); % number of joints ahead of idx_lnk, in case idx_lnk > finger.n (possible for fingertip link). max(finger.n) = 4
-% 
-%             for j = 1:nq_pre % Iterate over the current link + all father-links on this finger
-%                 link = finger.Link{j}; % link j, The link being checked at this moment
-%                 if ~link.is_real
-%                     continue;
-%                 end
-%                 x1 = link.symbolic.HT_this(1:3,4); % end points of current link
-%                 x2 = link.symbolic.HT_next(1:3,4);
-%                 coll = link.collList; % retrieve the links that collide with the current one
-% 
-%                 for k = 1:numel(coll) % link k collides with current link
-%                     [k_f,k_l] = deal(coll{k}(1),coll{k}(2));
-%                     if k_f ==0
-%                         % palm_point: point on the palm inner surface
-%                         palm_point = hand.P.points_inr(1,:).';
-%                         palm_normal = hand.P.contact.symbolic.n;
-%                         % only check the link endpoints (palm is flat)
-%                         % (if constraint is satisfied at all endpoints,
-%                         % then there cannot be an intersection with any
-%                         % finger and the palm)
-%                         dist_next = palm_normal.' * (x2 - palm_point);
-%                         c(end+1) = link_r - dist_next;
-%                         % [TODO] check if inner surface is at z=-5
-%                         continue; 
-%                     end
-%                     if k_f == idx_f % skip link on the same finger
-%                         continue;
-%                     end
-% 
-%                     link_coll = hand.F{k_f}.Link{k_l}; % link to collide with current link
-%                     if ~link_coll.is_real
-%                         continue;
-%                     end
-%                     
-%                     % filter out repetitive collision pairs 
-%                     already_exist = false; % if the current pair of collision already exists in the collision pair
-%                     if ~isempty(all_collision_pairs)
-%                         for p = 1:numel(all_collision_pairs)
-%                             temp_pair = all_collision_pairs{p}; % should be [2*2]: [finger_1, link_1; finger_2, link_2]
-%                             if ismember([idx_f,idx_l],temp_pair,'rows') && ismember([k_f,k_l],temp_pair,'rows')
-%                                 already_exist = true;
-%                                 break;
-%                             end   
-%                         end
-%                     end
-%                     if already_exist
-%                         continue;
-%                     else
-%                         all_collision_pairs{end+1} = [idx_f,idx_l;k_f,k_l];
-%                     end
-%                     y1 = link_coll.symbolic.HT_this(1:3,4); % end points of collided link
-%                     y2 = link_coll.symbolic.HT_next(1:3,4);
-%                     
-%                     % Here is the min. distance between two 3d line segments.
-%                     % Not min. distance between two 3d lines!
-%                     dist = distanceBTW2Lines(x1,x2,y1,y2,5); % minimum distance between two links (line segments) N=5: 5 sampling points
-%                     % All virtual father links will result in a 1*1 dist.
-%                     %%% Substitute all parameters (qi) that are not in X_key with hand joint values
-%                     symvars = symvar(dist);
-%                     subKeys = symvars(~ismember(symvars,X_key)); % symvars that belong to dict_q but not X_key, need to be substituted
-%                     if ~isempty(subKeys)
-%                         subValues = hand.q(ismember(dict_q,subKeys)); % subs them using hand default joint angle values
-%                         dist = subs(dist, subKeys, subValues.');
-%                     end
-%                     try
-%                         c(end+1 : end+numel(dist)) = 2*link_r - dist;
-%                     catch
-%                         disp('I don`t know.');
-%                     end
-%                 end
-%                     
-%             end
-%         end
-%     end
-%     c_idx(end+1) = numel(c)-sum(c_idx);
-%     c_name{end+1} = 'Collision avoidance (this link vs. other links)';
-%     fprintf('%d\n', c_idx(end));
+
 
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     % Inequality Constraint 5: Collision Avoidance
@@ -429,12 +345,12 @@ function [c, c_grad, param, ht_c, ht_c_grad] = sphNonLinIneqConst(hand, param)
     %%% Calculate gradient Gradient follows the format. Notice that this is the TRANSPOSE of Jacobian!
     % [dc1/dx1, dc2/dx1;...
     %  dc1/dx2, dc2/dx2];
-    c_grad = transpose(jacobian(c, X_key));
+    %c_grad = transpose(jacobian(c, X_key));
     
-    matlabFunction(c_grad,'File','../database/symbolic_functions/nonl_c_grad','Vars',X_key,'Optimize',false);
+    %matlabFunction(c_grad,'File','../database/symbolic_functions/nonl_c_grad','Vars',X_key,'Optimize',false);
     fprintf('  Total num. of nonl. inequality constraints: %d\n', numel(c));
     
-    if nargout > 3 % create function handles
-        ht_c = matlabFunction(c,'Vars',X_key);
-        ht_c_grad = matlabFunction(c_grad,'Vars',X_key);
-    end
+%     if nargout > 3 % create function handles
+%         ht_c = matlabFunction(c,'Vars',X_key);
+%         %ht_c_grad = matlabFunction(c_grad,'Vars',X_key);
+%     end

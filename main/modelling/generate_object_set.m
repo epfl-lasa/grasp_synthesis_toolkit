@@ -1,5 +1,6 @@
-function generate_object_set(nb_obj_per_set)
+function [objects] =  generate_object_set(nb_obj_per_set)
 
+fprintf("Creating sets of objects for sequential grasp...\n");
 
 % generate spheres
 par_sph_10.radius = 10;
@@ -35,6 +36,20 @@ par_comp_1.sphereCenter = [0,0,25;0,0,-25];
 par_comp_1.sphereRadius = [15,15];
 
 comp1 = create_object_list('comp',par_comp_1, nb_obj_per_set);
+
+objects.sph10 = sph_10;
+objects.sph15 = sph_15;
+objects.sph20 = sph_20;
+objects.sph25 = sph_25;
+objects.sph30 = sph_30;
+
+objects.cyl_R10H30 = cyl_R10H30;
+objects.cyl_R15H30 = cyl_R15H30;
+objects.cyl_R10H40 = cyl_R10H40;
+objects.cyl_R15H40 = cyl_R15H40;
+objects.cyl_R15H50 = cyl_R15H50;
+
+objects.comp = comp1;
 
 save('objects.mat','sph_10','sph_15','sph_20','sph_25','sph_30',...
                     'cyl_R10H30','cyl_R15H30','cyl_R10H40','cyl_R15H40','cyl_R15H50',...

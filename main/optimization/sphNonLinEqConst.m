@@ -1,5 +1,6 @@
 % Obtain the symbolic form of nonlinear inequality constraints
-function [ceq, ceq_grad, param, ht_ceq, ht_ceq_grad] = sphNonLinEqConst(hand, param)
+function [ceq, param] = sphNonLinEqConst(hand, param)
+% [ceq, ceq_grad, param, ht_ceq, ht_ceq_grad] = sphNonLinEqConst(hand, param)
 
     os_info = param.os.os_info;
     ncp = param.ncp;
@@ -85,14 +86,14 @@ function [ceq, ceq_grad, param, ht_ceq, ht_ceq_grad] = sphNonLinEqConst(hand, pa
     
     matlabFunction(ceq,'File','../database/symbolic_functions/nonl_ceq','Vars',X_key,'Optimize',false);
     
-    ceq_grad = transpose(jacobian(ceq, X_key)); % size (lens_var, lens_fun)
-    
-    matlabFunction(ceq_grad,'File','../database/symbolic_functions/nonl_ceq_grad','Vars',X_key,'Optimize',false);
-    
+%     ceq_grad = transpose(jacobian(ceq, X_key)); % size (lens_var, lens_fun)
+%     
+%     matlabFunction(ceq_grad,'File','../database/symbolic_functions/nonl_ceq_grad','Vars',X_key,'Optimize',false);
+%     
     fprintf('  Total num. of nonl. equality constraints: %d\n', numel(ceq));
     
-    if nargout > 3
-        ht_ceq = matlabFunction(ceq,'Vars',X_key);
-        ht_ceq_grad = matlabFunction(ceq_grad,'Vars',X_key);
-    end
+%     if nargout > 3
+%         ht_ceq = matlabFunction(ceq,'Vars',X_key);
+%         ht_ceq_grad = matlabFunction(ceq_grad,'Vars',X_key);
+%     end
 end

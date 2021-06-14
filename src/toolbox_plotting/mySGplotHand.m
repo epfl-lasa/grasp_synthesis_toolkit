@@ -25,7 +25,11 @@ function mySGplotHand(hand, factv, transp, plot_contacts,plot_jointlocation)
     elseif(~mySGisHand(hand))
         error 'hand argument is not a valid hand-structure' 
     end
-
+    %lightangle(-45,30);
+    light('Position',[100 0 100],'Style','local')
+    light('Position',[-100 0 100],'Style','local')
+    light('Position',[0 0 -100],'Style','local')
+    material dull 
     for j=1:hand.n % for each finger. Order: Index, Thumb, Middle, Ring, Little
         if ~factv(j) % if this finger is not activated (0), skip
             continue;
@@ -100,4 +104,5 @@ function mySGplotHand(hand, factv, transp, plot_contacts,plot_jointlocation)
     xlabel('x');
     ylabel('y');
     zlabel('z');
+    view([200,200,100])
 end

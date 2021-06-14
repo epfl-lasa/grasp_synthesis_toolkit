@@ -1,7 +1,11 @@
-function plotCylinder(cyl,plotApprox,clr_rgb)
+function plotCylinder(cyl,plotApprox,no_lights, clr_rgb)
 % plot the cylinder object
-if nargin<3
-    clr_rgb = [0,0,1];
+if nargin<4 
+    if ~isfield(cyl, 'clr')
+        clr_rgb = [0.9290 0.6940 0.1250];
+    else
+        clr_rgb = cyl.clr;
+    end
 end
 hold on
 grid on
@@ -15,8 +19,8 @@ if plotApprox
     % plot the cylinder as transparent surface, with approximating spheres
     % inside
     surf(cyl.xArray,cyl.yArray,cyl.zArray,clr,'FaceAlpha',0.3);
-    patch(cyl.xArray(1,:),cyl.yArray(1,:), cyl.zArray(1,:),'b','FaceAlpha',0.3);
-    patch(cyl.xArray(2,:),cyl.yArray(2,:), cyl.zArray(2,:),'b','FaceAlpha',0.3);
+    patch(cyl.xArray(1,:),cyl.yArray(1,:), cyl.zArray(1,:),clr_rgb,'FaceAlpha',0.3);
+    patch(cyl.xArray(2,:),cyl.yArray(2,:), cyl.zArray(2,:),clr_rgb,'FaceAlpha',0.3);
 
     nSpheres = size(cyl.axPtArray,2);
     % plot the approximating spheres inside
@@ -33,9 +37,13 @@ if plotApprox
     end
 else
     % plot the cylinder surface without transparency
-    surf(cyl.xArray,cyl.yArray,cyl.zArray,clr);
-    patch(cyl.xArray(1,:),cyl.yArray(1,:), cyl.zArray(1,:),'b');
-    patch(cyl.xArray(2,:),cyl.yArray(2,:), cyl.zArray(2,:),'b');
+    
+    if ~no_lights
+        lightangle(-45,30)
+    end
+    surf(cyl.xArray,cyl.yArray,cyl.zArray,clr,'FaceLighting','gouraud');
+    patch(cyl.xArray(1,:),cyl.yArray(1,:), cyl.zArray(1,:),clr_rgb,'FaceLighting','gouraud');
+    patch(cyl.xArray(2,:),cyl.yArray(2,:), cyl.zArray(2,:),clr_rgb,'FaceLighting','gouraud');
 end
 
 axis('equal')

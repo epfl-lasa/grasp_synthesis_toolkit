@@ -8,7 +8,12 @@ switch object.type
         oc = X_sol(param.idx_oc); % object center
         transl = [oc(1);oc(2);oc(3)];
         radius = param.obj.radius; % object radius
-        object = sphereObject(transl,radius,object.clr);
+        if isfield(object, 'clr')
+            clr = object.clr;
+        else
+            clr = [0.9290 0.6940 0.1250]; % default color: yellow / gold
+        end
+        object = sphereObject(transl,radius,clr);
     case 'cyl' % cylinder
         cylParam.transl = X_sol(param.idx_oc);     % object center
         quat = X_sol(param.idx_quat);         % quaternion (already normalized)
